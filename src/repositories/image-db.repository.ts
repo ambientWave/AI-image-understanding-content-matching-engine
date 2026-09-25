@@ -182,4 +182,32 @@ export class ImageDBRepository {
         const result = await this.pool.query('DELETE FROM image WHERE id = $1', [id]);
         return (result.rowCount ?? 0) > 0;
     }
+
+    async count(filter?: ImageRowFilter): Promise<number> {
+        const conditions: string[] = [];
+        const params: (string | number)[] = [];
+
+        if (filter?.url_path !== undefined && filter.url_path.trim() !== '') {
+            conditions.push(`url_path = $${params.length + 1}`);
+            params.push(filter.url_path.trim());
+        }
+
+        if (filter?.status !== undefined && filter.status.trim() !== '') {
+            conditions.push(`status = $${params.length + 1}`);
+            params.push(filter.status.trim());
+        }
+
+        if (filter?.filename !== undefined && filter.filename.trim() !== '') {
+            conditions.push(`filename = $${params.length + 1}`);
+            params.push(filter.filename.trim());
+        }
+
+        let sql = 'SELECT COUNT(*) FROM image';
+        if (conditions.length > 0) {
+            sql += ` WHERE ${conditions.join(' AND ')}`;
+        }
+
+        const result = await this.pool.query(sql, params);
+        return parseInt(result.rows[0].count, 10);
+    }
 }

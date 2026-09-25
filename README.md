@@ -577,7 +577,7 @@ sequenceDiagram
 | **Dependency Injection** | `src/config/container.ts` | Configures TSyringe IoC container; registers singletons for Repositories, Domain Services, and Queues. **Retains model weights and DB pools resident in RAM.** | Configuration tokens | Injected instances |
 | **Orchestration** | `src/services/ingestion-orchestrator.service.ts`<br>`src/services/job-queue.service.ts` | Coordinates pipeline sequencing, produces BullMQ jobs, coordinates post-worker lifecycle callbacks. | Entity IDs / Domain DTOs | Batch IDs / Queued Jobs |
 | **Worker Consumers (Thin)** | `src/workers/image-understand.worker.ts`<br>`src/workers/text-embed.worker.ts`<br>`src/workers/post-summarize.worker.ts` | **"Run one step, then hand control back."** Dequeues BullMQ jobs, resolves target Domain Services via TSyringe, and reports completion to Orchestrator. **Never touches Repositories.** | BullMQ Job with UUID payload | Invocation of Domain Service |
-| **Domain Services** | `src/services/image-understand.service.ts`<br>`src/services/text-embed.service.ts`<br>`src/services/post-summarize.service.ts`<br>`src/services/evaluation.service.ts`<br>`src/services/matching.service.ts` | **"For each of these, do a thing."** Core business logic layer. Coordinates AI inference, schema validation with Zod, state transactions, cost calculation, and interacts directly with Repositories. | Domain Models, IDs, Embeddings | Domain Entities, Similarity Candidates |
+| **Domain Services** | `src/services/image-understand.service.ts`<br>`src/services/text-embed.service.ts`<br>`src/services/post-summarize.service.ts`<br>`src/services/evaluation.service.ts`<br>`src/services/matching.service.ts`<br>`src/services/image-query.service.ts`<br>`src/services/post-query.service.ts` | **"For each of these, do a thing."** Core business logic layer. Coordinates AI inference, schema validation with Zod, state transactions, cost calculation, and interacts directly with Repositories. | Domain Models, IDs, Embeddings | Domain Entities, Similarity Candidates |
 | **Repositories (Data Access)** | `src/repositories/*-db.repository.ts`<br>`src/repositories/*-embed.repository.ts`<br>`src/repositories/*-understand.repository.ts` | **"Translate one bulk operation to SQL/Vector queries."** Encapsulates PostgreSQL SQL queries (`UNNEST`), ChromaDB collection operations, and external SDK clients (Gemini, Pexels). **No for-loops.** | Query specs / Models | DB rows / Vector records |
 | **Frontend UI** | `public/*.html`<br>`public/js/api.js`<br>`public/css/style.css` | Real-time observability dashboard, Kanban board, Pexels image search, and matching inspector. | Browser user input | Visual DOM updates |
 
@@ -738,6 +738,72 @@ Web-based Pexels image discovery interface for searching, previewing, and select
 
 - **Features**: Search query, results per page (10-50), multi-select grid, double-click preview modal, batch enqueue to `POST /images`
 - **Navigation**: Accessible via "Download" link in top navigation bar
+
+#### `GET /images`
+Retrieves a paginated list of processed images with optional filtering.
+
+- **Query Parameters**:
+  - `limit` (optional, default: 50, max: 100) — Number of results per page
+  - `offset` (optional, default: 0) — Pagination offset
+  - `status` (optional) — Filter by status (`pending`, `processing`, `completed`, `embedding`, `embedded`, `failed`, `low_confidence`)
+  - `url_path` (optional) — Filter by exact URL match
+  - `filename` (optional) — Filter by exact filename match
+  - `orderBy` (optional, default: `created_at`) — Sort field: `created_at`, `updated_at`, `filename`
+  - `orderDir` (optional, default: `DESC`) — Sort direction: `ASC`, `DESC`
+
+- **Response (`200 OK`)**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "filename": "image.jpg",
+      "url_path": "https://...",
+      "tag": { "subject": "...", "category": "...", "attributes": [...], "caption": "...", "confidence": 0.95 },
+      "status": "completed",
+      "created_at": "2026-01-15T10:30:00.000Z",
+      "updated_at": "2026-01-15T10:35:00.000Z"
+    }
+  ],
+  "total": 142,
+  "limit": 50,
+  "offset": 0,
+  "hasMore": true
+}
+```
+Item fields include `id`, `filename`, `url_path`, `tag` (JSONB with subject, category, attributes, caption, confidence), `status`, `created_at`, `updated_at`.
+
+#### `GET /posts`
+Retrieves a paginated list of processed posts with optional filtering.
+
+- **Query Parameters**:
+  - `limit` (optional, default: 50, max: 100) — Number of results per page
+  - `offset` (optional, default: 0) — Pagination offset
+  - `status` (optional) — Filter by status (`pending`, `summarizing`, `summarized`, `embedding`, `embedded`, `failed`)
+  - `url_path` (optional) — Filter by exact URL match
+  - `orderBy` (optional, default: `created_at`) — Sort field: `created_at`, `updated_at`, `url_path`
+  - `orderDir` (optional, default: `DESC`) — Sort direction: `ASC`, `DESC`
+
+- **Response (`200 OK`)**:
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "url_path": "https://example.com/article",
+      "summary": "Article summary text...",
+      "status": "embedded",
+      "created_at": "2026-01-15T10:30:00.000Z",
+      "updated_at": "2026-01-15T10:35:00.000Z"
+    }
+  ],
+  "total": 87,
+  "limit": 50,
+  "offset": 0,
+  "hasMore": true
+}
+```
+Item fields include `id`, `url_path`, `summary`, `status`, `created_at`, `updated_at`.
 
 ---
 
@@ -915,8 +981,12 @@ The application serves a clean, responsive dashboard directly from `/public`:
 4. **Image Ingestion Hub (`/images.html`)**:
    - Direct integration with Pexels API: Search stock photos, multi-select, and enqueue directly into BullMQ.
    - Manual bulk URL enqueue textarea for custom datasets.
+   - Paginated image listing via `GET /images` with status filtering, sorting, and ID display.
+   - Inline preview modal for quick image inspection.
 5. **Post Ingestion Portal (`/posts.html`)**:
    - Bulk URL ingestion for web articles, Wikipedia entries, and blog content.
+   - Paginated post listing via `GET /posts` with status filtering, sorting, and ID display.
+   - Post detail modal with summary preview and navigation to semantic ranking.
 6. **Semantic Ranking & Evaluation Studio (`/ranking.html`)**:
    - Enter any processed Post UUID to preview the generated summary.
    - Real-time Cosine Similarity evaluation against indexed images.

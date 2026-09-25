@@ -23,6 +23,8 @@ import { PostEmbedService } from '../services/post-embed.service.ts';
 import { MatchingService } from '../services/matching.service.ts';
 import { EvaluationService } from '../services/evaluation.service.ts';
 import { DatabaseInitializerService } from '../services/database-initializer.service.ts';
+import { ImageQueryService } from '../services/image-query.service.ts';
+import { PostQueryService } from '../services/post-query.service.ts';
 
 // Create repository instances (singletons - models load once)
 const textEmbedRepository = new TextEmbedRepository();
@@ -54,6 +56,8 @@ const postEmbedService = new PostEmbedService(textEmbedRepository);
 const matchingService = new MatchingService(textEmbedRepository);
 const evaluationService = new EvaluationService(matchingService, postDBRepository);
 const jobQueueService = new JobQueueService();
+const imageQueryService = new ImageQueryService(imageDBRepository);
+const postQueryService = new PostQueryService(postDBRepository);
 const ingestionOrchestratorService = new IngestionOrchestratorService(
     imageDBRepository,           // 1
     postDBRepository,            // 2
@@ -83,6 +87,8 @@ container.registerInstance('PostEmbedService', postEmbedService);
 container.registerInstance('MatchingService', matchingService);
 container.registerInstance('EvaluationService', evaluationService);
 container.registerInstance('JobQueueService', jobQueueService);
+container.registerInstance('ImageQueryService', imageQueryService);
+container.registerInstance('PostQueryService', postQueryService);
 container.registerInstance('IngestionOrchestratorService', ingestionOrchestratorService);
 container.registerInstance('DatabaseInitializerService', databaseInitializerService);
 

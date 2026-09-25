@@ -141,15 +141,37 @@ https://example.com/post3" rows="4"></textarea>
       container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading posts…</div>';
 
       try {
-        // We need a backend endpoint to list posts - for now show placeholder
-        container.innerHTML = `
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        <p class="empty-state-title">No posts endpoint available</p>
-        <p class="empty-state-desc">Add GET /posts endpoint to backend to list processed posts.</p>
-        <p class="form-hint" style="margin-top: 12px;">You can still enqueue posts using the form above. After processing, use the Ranking page to find matching images.</p>
+        const response = await api.getPosts({ limit });
+        const posts = response.data || [];
+
+        if (!posts.length) {
+          container.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <p class="empty-state-title">No posts found</p>
+          <p class="empty-state-desc">Enqueue some posts to get started.</p>
+        </div>
+      `;
+          return;
+        }
+
+        container.innerHTML = posts.map(post => `
+      <div class="post-card" data-id="${post.id}">
+        <div class="post-card-header">
+          <div class="post-card-title">${post.url_path}</div>
+          <div class="flex items-center gap-4">
+            ${getStatusBadge(post.status)}
+            <button class="btn btn-ghost btn-sm" onclick="showPostModal('${post.id}')">View</button>
+          </div>
+        </div>
+        <div class="post-card-summary">${post.summary || '<em>No summary yet</em>'}</div>
+        <div class="post-card-meta">
+          <span>Created: ${formatTime(post.created_at)}</span>
+          <span>Updated: ${formatTime(post.updated_at)}</span>
+          <span style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-subtle);">ID: ${post.id}</span>
+        </div>
       </div>
-    `;
+    `).join('');
       } catch (err) {
         container.innerHTML = `<div class="empty-state"><p class="empty-state-title">Error</p><p class="empty-state-desc">${err.message}</p></div>`;
       }

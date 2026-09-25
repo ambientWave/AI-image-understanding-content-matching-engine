@@ -28,10 +28,18 @@ export const api = {
   // Images
   enqueueImages: (imageUrls) => request('/images', { method: 'POST', body: { image_urls: imageUrls } }),
   searchImages: (query) => request(`/download/images?search=${encodeURIComponent(query)}`),
+  getImages: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/images?${qs}`);
+  },
 
   // Posts
   enqueuePosts: (postUrls) => request('/posts', { method: 'POST', body: { post_urls: postUrls } }),
   evaluatePost: (postId, resultsNumber = 10) => request(`/posts/${postId}/images?results_number=${resultsNumber}`),
+  getPosts: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/posts?${qs}`);
+  },
 
   // Cost Log
   getCostLog: (params = {}) => {

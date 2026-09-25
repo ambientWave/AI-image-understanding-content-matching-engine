@@ -2,11 +2,13 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { IngestionOrchestratorService } from '../services/ingestion-orchestrator.service.ts';
 import { downloadImagesList } from '../services/image-download.service.js';
 import { JobQueueService } from '../services/job-queue.service.ts';
+import { ImageQueryService } from '../services/image-query.service.ts';
 import { container } from '../config/container.ts';
 
 const router: Router = Router();
 const orchestrator = container.resolve('IngestionOrchestratorService') as IngestionOrchestratorService;
 const jobQueueService = container.resolve('JobQueueService') as JobQueueService;
+const imageQueryService = container.resolve('ImageQueryService') as ImageQueryService;
 
 // red fox, wolf, dog, bear, deer
 router.get('/download/images', async (req: Request, res: Response, next: NextFunction) => {
@@ -39,6 +41,33 @@ router.post('/images', async (req: Request, res: Response, next: NextFunction) =
         }
         const result = await orchestrator.enqueueIngestionPipeline(image_urls);
         res.status(202).json(result);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+router.get('/images', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+        const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : undefined;
+        const status = req.query.status as string | undefined;
+        const url_path = req.query.url_path as string | undefined;
+        const filename = req.query.filename as string | undefined;
+        const orderBy = req.query.orderBy as 'created_at' | 'updated_at' | 'filename' | undefined;
+        const orderDir = req.query.orderDir as 'ASC' | 'DESC' | undefined;
+
+        const options: any = {};
+        if (limit !== undefined) options.limit = limit;
+        if (offset !== undefined) options.offset = offset;
+        if (status !== undefined) options.status = status;
+        if (url_path !== undefined) options.url_path = url_path;
+        if (filename !== undefined) options.filename = filename;
+        if (orderBy !== undefined) options.orderBy = orderBy;
+        if (orderDir !== undefined) options.orderDir = orderDir;
+
+        const result = await imageQueryService.getImages(options);
+        res.json(result);
     } catch (err) {
         next(err);
     }

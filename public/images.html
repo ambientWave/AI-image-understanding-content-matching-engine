@@ -149,12 +149,13 @@ https://example.com/image3.jpg" rows="4"></textarea>
                   <th style="width: 130px;">Status</th>
                   <th style="width: 180px;">Created</th>
                   <th style="width: 180px;">Updated</th>
+                  <th style="width: 200px;">ID</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="recentTableBody">
                 <tr>
-                  <td colspan="6" class="text-center loading">
+                  <td colspan="7" class="text-center loading">
                     <div class="spinner"></div>Loading...
                   </td>
                 </tr>
@@ -365,20 +366,44 @@ https://example.com/image3.jpg" rows="4"></textarea>
       tbody.innerHTML = '<tr><td colspan="6" class="text-center loading"><div class="spinner"></div>Loading…</td></tr>';
 
       try {
-        // We need to query the database directly - for now use a workaround
-        // In a real app, you'd add an endpoint like GET /images?limit=50
-        // For now, we'll show a message
-        tbody.innerHTML = `
+        const response = await api.getImages({ limit });
+        const images = response.data || [];
+
+        if (!images.length) {
+          tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center empty-state">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+              <p class="empty-state-title">No images found</p>
+              <p class="empty-state-desc">Enqueue some images to get started.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+          return;
+        }
+
+        tbody.innerHTML = images.map(img => `
       <tr>
-        <td colspan="6" class="text-center empty-state">
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
-            <p class="empty-state-title">No direct API endpoint</p>
-            <p class="empty-state-desc">Add GET /images endpoint to backend to list recent images.</p>
-          </div>
+        <td>
+          <img src="${img.url_path}" alt="${img.filename}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'">
+        </td>
+        <td>
+          <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg-muted);">${img.filename}</div>
+          <a href="${img.url_path}" target="_blank" rel="noopener" class="mono" style="font-size: 0.6875rem; word-break: break-all;">${img.url_path}</a>
+        </td>
+        <td>${getStatusBadge(img.status)}</td>
+        <td style="font-family: var(--font-mono); font-size: 0.75rem;">${formatTime(img.created_at)}</td>
+        <td style="font-family: var(--font-mono); font-size: 0.75rem;">${formatTime(img.updated_at)}</td>
+        <td style="font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-subtle);">${img.id}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="showImageModal('${img.url_path}', '${img.filename.replace(/'/g, "\\'")}')" title="Preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </td>
       </tr>
-    `;
+    `).join('');
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center empty-state"><div class="empty-state"><p class="empty-state-title">Error</p><p class="empty-state-desc">${err.message}</p></div></td></tr>`;
       }
