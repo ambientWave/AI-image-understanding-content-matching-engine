@@ -188,7 +188,7 @@ To maximize cost-effectiveness while preserving state-of-the-art multimodal visi
                 │   Semantic text vectors   │                                     │ • Detailed entity tagging │
                 │ • T5-Small Local Pipeline │                                     │ • Complex scene captions  │
                 │   Zero-cost summarization │                                     │ • Confidence scoring      │
-                │ ➔ Cost: $0.000000 / call  │                                     │ ➔ Cost: $0.000125 / call  │
+                │ ➔ Cost: $0.000000 / call │                                     │ ➔ Cost: $0.000125 / call  │
                 └───────────────────────────┘                                     └───────────────────────────┘
 ```
 
@@ -442,19 +442,19 @@ The following sequence illustrates the lifecycle of a batch of image URLs ingest
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as 🌐 Client / Dashboard
-    participant API as 🛣️ Express Router (/images)
-    participant Orchestrator as ⚙️ Ingestion Orchestrator
-    participant Queue as 📬 BullMQ ("vision", "embed")
-    participant VWorker as 👁️ Vision Worker
-    participant S_Understand as 🧠 ImageUnderstandService
-    participant R_ImageDB as 📚 ImageDBRepository
-    participant Gemini as ☁️ Gemini 3.1 Flash Lite API
-    participant S_EmbedImg as 🖼️ ImageEmbedService
-    participant EWorker as 🧬 Text Embed Worker
-    participant S_EmbedText as 🔤 TextEmbedService
-    participant Chroma as 🗃️ ChromaDB ("image_embeddings", "text_embeddings")
-    participant DB as 🗄️ PostgreSQL ("image", "image_tags", "cost_log")
+    actor Client as "🌐 Client / Dashboard"
+    participant API as "🛣️ Express Router (/images)"
+    participant Orchestrator as "⚙️ Ingestion Orchestrator"
+    participant Queue as "📬 BullMQ ('vision', 'embed')"
+    participant VWorker as "👁️ Vision Worker"
+    participant S_Understand as "🧠 ImageUnderstandService"
+    participant R_ImageDB as "📚 ImageDBRepository"
+    participant Gemini as "☁️ Gemini 3.1 Flash Lite API"
+    participant S_EmbedImg as "🖼️ ImageEmbedService"
+    participant EWorker as "🧬 Text Embed Worker"
+    participant S_EmbedText as "🔤 TextEmbedService"
+    participant Chroma as "🗃️ ChromaDB ('image_embeddings', 'text_embeddings')"
+    participant DB as "🗄️ PostgreSQL ('image', 'image_tags', 'cost_log')"
 
     Client->>API: POST /images { "image_urls": ["https://.../fox.jpg"] }
     API->>Orchestrator: enqueueIngestionPipeline(urls)
@@ -511,18 +511,18 @@ The following sequence illustrates how blog articles are ingested, summarized lo
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as 🌐 Client / Dashboard
-    participant API as 🛣️ Express Router (/posts)
-    participant Orchestrator as ⚙️ Ingestion Orchestrator
-    participant Queue as 📬 BullMQ ("post-summarize", "embed")
-    participant SWorker as 📝 Post Summarize Worker
-    participant S_Summarize as 📝 PostSummarizeService
-    participant S_Download as 🌐 PostDownloadService
-    participant EWorker as 🧬 Text Embed Worker
-    participant S_EmbedText as 🔤 TextEmbedService
-    participant Eval as 🎯 EvaluationService
-    participant Chroma as 🗃️ ChromaDB ("text_embeddings")
-    participant DB as 🗄️ PostgreSQL ("post", "suggestion")
+    actor Client as "🌐 Client / Dashboard"
+    participant API as "🛣️ Express Router (/posts)"
+    participant Orchestrator as "⚙️ Ingestion Orchestrator"
+    participant Queue as "📬 BullMQ ('post-summarize', 'embed')"
+    participant SWorker as "📝 Post Summarize Worker"
+    participant S_Summarize as "📝 PostSummarizeService"
+    participant S_Download as "🌐 PostDownloadService"
+    participant EWorker as "🧬 Text Embed Worker"
+    participant S_EmbedText as "🔤 TextEmbedService"
+    participant Eval as "🎯 EvaluationService"
+    participant Chroma as "🗃️ ChromaDB ('text_embeddings')"
+    participant DB as "🗄️ PostgreSQL ('post', 'suggestion')"
 
     %% Ingestion Stage
     Client->>API: POST /posts { "post_urls": ["https://.../article"] }
@@ -959,9 +959,9 @@ Aggregates financial expenditure across time windows (`1h`, `24h`, `7d`, `30d`).
 The application serves a clean, responsive dashboard directly from `/public`:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────────────────────────────┐
 │  IMAGE UNDERSTANDING ENGINE | Dashboard   Download   Jobs   Images   Posts   Ranking   │
-└─────────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 1. **Dashboard (`/dashboard.html`)**:
