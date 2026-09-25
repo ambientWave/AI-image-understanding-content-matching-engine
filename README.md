@@ -282,7 +282,7 @@ flowchart TD
 
     subgraph PresentationLayer ["1. Presentation & Transport Layer"]
         Router["🛣️ Express 5 Router\n(/images, /posts, /jobs, /cost-log)\n• Pure HTTP translation • No business logic"]
-        Static["🎨 Static SPA Dashboard\n(Dashboard, Download, Jobs, Images, Posts, Ranking)"]
+        Static["🎨 Static SPA Dashboard\n(Dashboard, Jobs, Images, Posts, Ranking)"]
         IoC["💉 TSyringe DI Container\n(Keeps Model Singletons & Pools Resident in Memory)"]
     end
 
@@ -442,19 +442,19 @@ The following sequence illustrates the lifecycle of a batch of image URLs ingest
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as "🌐 Client / Dashboard"
-    participant API as "🛣️ Express Router (/images)"
-    participant Orchestrator as "⚙️ Ingestion Orchestrator"
-    participant Queue as "📬 BullMQ ('vision', 'embed')"
-    participant VWorker as "👁️ Vision Worker"
-    participant S_Understand as "🧠 ImageUnderstandService"
-    participant R_ImageDB as "📚 ImageDBRepository"
-    participant Gemini as "☁️ Gemini 3.1 Flash Lite API"
-    participant S_EmbedImg as "🖼️ ImageEmbedService"
-    participant EWorker as "🧬 Text Embed Worker"
-    participant S_EmbedText as "🔤 TextEmbedService"
-    participant Chroma as "🗃️ ChromaDB ('image_embeddings', 'text_embeddings')"
-    participant DB as "🗄️ PostgreSQL ('image', 'image_tags', 'cost_log')"
+    actor Client as 🌐 Client / Dashboard
+    participant API as 🛣️ Express Router (/images)
+    participant Orchestrator as ⚙️ Ingestion Orchestrator
+    participant Queue as 📬 BullMQ ("vision", "embed")
+    participant VWorker as 👁️ Vision Worker
+    participant S_Understand as 🧠 ImageUnderstandService
+    participant R_ImageDB as 📚 ImageDBRepository
+    participant Gemini as ☁️ Gemini 3.1 Flash Lite API
+    participant S_EmbedImg as 🖼️ ImageEmbedService
+    participant EWorker as 🧬 Text Embed Worker
+    participant S_EmbedText as 🔤 TextEmbedService
+    participant Chroma as 🗃️ ChromaDB ("image_embeddings", "text_embeddings")
+    participant DB as 🗄️ PostgreSQL ("image", "image_tags", "cost_log")
 
     Client->>API: POST /images { "image_urls": ["https://.../fox.jpg"] }
     API->>Orchestrator: enqueueIngestionPipeline(urls)
@@ -511,18 +511,18 @@ The following sequence illustrates how blog articles are ingested, summarized lo
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as "🌐 Client / Dashboard"
-    participant API as "🛣️ Express Router (/posts)"
-    participant Orchestrator as "⚙️ Ingestion Orchestrator"
-    participant Queue as "📬 BullMQ ('post-summarize', 'embed')"
-    participant SWorker as "📝 Post Summarize Worker"
-    participant S_Summarize as "📝 PostSummarizeService"
-    participant S_Download as "🌐 PostDownloadService"
-    participant EWorker as "🧬 Text Embed Worker"
-    participant S_EmbedText as "🔤 TextEmbedService"
-    participant Eval as "🎯 EvaluationService"
-    participant Chroma as "🗃️ ChromaDB ('text_embeddings')"
-    participant DB as "🗄️ PostgreSQL ('post', 'suggestion')"
+    actor Client as 🌐 Client / Dashboard
+    participant API as 🛣️ Express Router (/posts)
+    participant Orchestrator as ⚙️ Ingestion Orchestrator
+    participant Queue as 📬 BullMQ ("post-summarize", "embed")
+    participant SWorker as 📝 Post Summarize Worker
+    participant S_Summarize as 📝 PostSummarizeService
+    participant S_Download as 🌐 PostDownloadService
+    participant EWorker as 🧬 Text Embed Worker
+    participant S_EmbedText as 🔤 TextEmbedService
+    participant Eval as 🎯 EvaluationService
+    participant Chroma as 🗃️ ChromaDB ("text_embeddings")
+    participant DB as 🗄️ PostgreSQL ("post", "suggestion")
 
     %% Ingestion Stage
     Client->>API: POST /posts { "post_urls": ["https://.../article"] }
