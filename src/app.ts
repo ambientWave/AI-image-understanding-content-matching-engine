@@ -36,18 +36,18 @@ await databaseInitializer.initializeAll();
 // The worker will automatically pick up jobs from the queue and process them.
 // This is a simple way to implement a message queue.
 visionWorker().then(worker => {
-    console.log('Vision worker started');
-    worker.on('error', err => console.error('Vision worker error:', err));
+  console.log('Vision worker started');
+  worker.on('error', err => console.error('Vision worker error:', err));
 });
 
 textEmbedWorker().then(worker => {
-    console.log('Text embed worker started');
-    worker.on('error', err => console.error('Text embed worker error:', err));
+  console.log('Text embed worker started');
+  worker.on('error', err => console.error('Text embed worker error:', err));
 });
 
 postSummarizeWorker().then(worker => {
-    console.log('Post summarize worker started');
-    worker.on('error', err => console.error('Post summarize worker error:', err));
+  console.log('Post summarize worker started');
+  worker.on('error', err => console.error('Post summarize worker error:', err));
 });
 
 app.use('/', imageRoutes);
@@ -62,16 +62,17 @@ app.get('/health', (req, res) => {
 
 // SPA fallback - serve dashboard.html for frontend routes
 const frontendRoutes = ['/dashboard', '/jobs', '/images', '/posts', '/ranking'];
-app.get(/^\/(dashboard|jobs|images|posts|ranking)(?:\/.*)?$/, (req, res) => {
+app.get(/^\/(dashboard|jobs|images|posts|ranking|download)(?:\/.*)?$/, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-    console.log(`Dashboard: http://localhost:${PORT}/dashboard.html`);
-    console.log(`Jobs: http://localhost:${PORT}/jobs.html`);
-    console.log(`Images: http://localhost:${PORT}/images.html`);
-    console.log(`Posts: http://localhost:${PORT}/posts.html`);
-    console.log(`Ranking: http://localhost:${PORT}/ranking.html`);
+  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log(`Dashboard: http://localhost:${PORT}/dashboard.html`);
+  console.log(`Jobs: http://localhost:${PORT}/jobs.html`);
+  console.log(`Images: http://localhost:${PORT}/images.html`);
+  console.log(`Posts: http://localhost:${PORT}/posts.html`);
+  console.log(`Ranking: http://localhost:${PORT}/ranking.html`);
+  console.log(`Download: http://localhost:${PORT}/download.html`);
 });

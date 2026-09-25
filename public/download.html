@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Images - Image Understanding</title>
+  <title>Download Images - Image Understanding</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 
@@ -21,9 +21,9 @@
       </div>
       <nav class="nav">
         <a href="/dashboard.html" class="nav-link">Dashboard</a>
-        <a href="/download.html" class="nav-link">Download</a>
+        <a href="/download.html" class="nav-link active">Download</a>
         <a href="/jobs.html" class="nav-link">Jobs</a>
-        <a href="/images.html" class="nav-link active">Images</a>
+        <a href="/images.html" class="nav-link">Images</a>
         <a href="/posts.html" class="nav-link">Posts</a>
         <a href="/ranking.html" class="nav-link">Ranking</a>
       </nav>
@@ -32,7 +32,7 @@
     <main class="main" id="app">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Images</h1>
+          <h1 class="page-title">Download Images</h1>
           <p class="page-subtitle">Search Pexels and enqueue images for processing</p>
         </div>
       </div>
@@ -40,17 +40,16 @@
       <!-- Search Section -->
       <div class="card mb-4">
         <div class="card-header">
-          <h2 class="card-title">Search & Enqueue Images</h2>
+          <h2 class="card-title">Search Pexels</h2>
         </div>
         <div class="card-body">
           <form id="searchForm" class="form-row" style="align-items: flex-end;">
             <div class="form-group" style="flex: 1; min-width: 250px;">
               <label class="form-label" for="searchQuery">Search Query</label>
-              <input type="text" class="form-input" id="searchQuery" placeholder="e.g., red fox, wolf, landscape"
-                required>
+              <input type="text" class="form-input" id="searchQuery" placeholder="e.g., red fox, wolf, landscape" required>
             </div>
             <div class="form-group" style="width: auto;">
-              <label class="form-label" for="searchPerPage">Results</label>
+              <label class="form-label" for="searchPerPage">Results per page</label>
               <select class="form-select" id="searchPerPage" style="width: auto; min-width: 100px;">
                 <option value="10">10</option>
                 <option value="20" selected>20</option>
@@ -71,96 +70,24 @@
         </div>
       </div>
 
-      <!-- Manual URL Entry -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h2 class="card-title">Enqueue Image URLs Directly</h2>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label" for="imageUrls">Image URLs (one per line)</label>
-            <textarea class="form-textarea form-input" id="imageUrls" placeholder="https://example.com/image1.jpg
-https://example.com/image2.jpg
-https://example.com/image3.jpg" rows="4"></textarea>
-            <p class="form-hint">Paste direct image URLs. They will be enqueued for vision processing.</p>
-          </div>
-          <div class="flex gap-4">
-            <button class="btn btn-primary" id="enqueueUrlsBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              Enqueue Images
-            </button>
-            <button class="btn btn-secondary" id="clearUrlsBtn">Clear</button>
-          </div>
-          <div id="enqueueStatus" class="form-hint" style="margin-top: 8px;"></div>
-        </div>
-      </div>
-
       <!-- Search Results -->
       <div class="card" id="resultsCard" style="display: none;">
         <div class="card-header">
           <h2 class="card-title">Search Results</h2>
           <div class="flex items-center gap-4">
             <span id="resultsCount" class="text-center" style="color: var(--fg-muted); font-size: 0.8125rem;"></span>
-            <button class="btn btn-primary btn-sm" id="enqueueAllBtn" style="display: none;">
+            <button class="btn btn-primary btn-sm" id="enqueueSelectedBtn" style="display: none;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              Enqueue All
+              Enqueue Selected
             </button>
           </div>
         </div>
         <div class="card-body" style="padding: 0;">
           <div class="image-grid" id="imageGrid"></div>
-        </div>
-      </div>
-
-      <!-- Recent Images Table -->
-      <div class="card mt-4">
-        <div class="card-header">
-          <h2 class="card-title">Recently Processed Images</h2>
-          <div class="flex items-center gap-4">
-            <select class="form-select" id="recentLimit" style="width: auto; min-width: 120px;">
-              <option value="20">20</option>
-              <option value="50" selected>50</option>
-              <option value="100">100</option>
-            </select>
-            <button class="btn btn-secondary btn-sm" id="refreshRecentBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6" />
-                <path d="M1 20v-6h6" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="table-wrapper">
-            <table class="table" id="recentTable">
-              <thead>
-                <tr>
-                  <th style="width: 60px;">Preview</th>
-                  <th>Image URL / Filename</th>
-                  <th style="width: 130px;">Status</th>
-                  <th style="width: 180px;">Created</th>
-                  <th style="width: 180px;">Updated</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="recentTableBody">
-                <tr>
-                  <td colspan="6" class="text-center loading">
-                    <div class="spinner"></div>Loading...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </main>
@@ -184,24 +111,17 @@ https://example.com/image3.jpg" rows="4"></textarea>
   <script type="module">
     import { api } from '/js/api.js';
 
-    const state = { searchResults: [], selectedImages: new Set() };
+    const state = {
+      searchResults: [],
+      selectedImages: new Set(),
+      currentQuery: '',
+      currentPage: 1,
+      loading: false
+    };
 
     function formatTime(iso) {
       if (!iso) return '—';
       return new Date(iso).toLocaleString();
-    }
-
-    function getStatusBadge(status) {
-      const badges = {
-        pending: 'badge-pending',
-        processing: 'badge-processing',
-        completed: 'badge-completed',
-        embedding: 'badge-embedding',
-        embedded: 'badge-embedded',
-        failed: 'badge-failed',
-        low_confidence: 'badge-low_confidence'
-      };
-      return `<span class="badge ${badges[status] || 'badge-pending'}">${status.replace('_', ' ')}</span>`;
     }
 
     // Search Pexels
@@ -213,7 +133,7 @@ https://example.com/image3.jpg" rows="4"></textarea>
       const resultsCard = document.getElementById('resultsCard');
       const grid = document.getElementById('imageGrid');
       const countEl = document.getElementById('resultsCount');
-      const enqueueAllBtn = document.getElementById('enqueueAllBtn');
+      const enqueueSelectedBtn = document.getElementById('enqueueSelectedBtn');
 
       if (!query) return;
 
@@ -221,12 +141,13 @@ https://example.com/image3.jpg" rows="4"></textarea>
       statusEl.style.color = 'var(--accent)';
       grid.innerHTML = '<div class="loading" style="grid-column: 1/-1;"><div class="spinner"></div>Searching Pexels…</div>';
       resultsCard.style.display = 'block';
-      enqueueAllBtn.style.display = 'none';
+      enqueueSelectedBtn.style.display = 'none';
 
       try {
         const data = await api.searchImages(query);
         state.searchResults = data.photos || data || [];
         state.selectedImages.clear();
+        state.currentQuery = query;
 
         if (!state.searchResults.length) {
           grid.innerHTML = `
@@ -244,7 +165,7 @@ https://example.com/image3.jpg" rows="4"></textarea>
 
         renderImageGrid();
         countEl.textContent = `${state.searchResults.length} result${state.searchResults.length !== 1 ? 's' : ''}`;
-        enqueueAllBtn.style.display = 'inline-flex';
+        enqueueSelectedBtn.style.display = 'inline-flex';
         statusEl.textContent = `Found ${state.searchResults.length} images`;
         statusEl.style.color = 'var(--success)';
       } catch (err) {
@@ -305,7 +226,7 @@ https://example.com/image3.jpg" rows="4"></textarea>
       });
     }
 
-    document.getElementById('enqueueAllBtn').addEventListener('click', async () => {
+    document.getElementById('enqueueSelectedBtn').addEventListener('click', async () => {
       const urls = state.searchResults
         .filter((_, idx) => state.selectedImages.has(state.searchResults[idx].id || idx))
         .map(p => p.src?.large || p.src?.original || p.src?.medium || p.url)
@@ -316,76 +237,28 @@ https://example.com/image3.jpg" rows="4"></textarea>
       await enqueueImages(urls);
     });
 
-    document.getElementById('enqueueUrlsBtn').addEventListener('click', async () => {
-      const text = document.getElementById('imageUrls').value.trim();
-      if (!text) return alert('Please enter image URLs');
-
-      const urls = text.split('\n').map(u => u.trim()).filter(Boolean);
-      await enqueueImages(urls);
-    });
-
-    document.getElementById('clearUrlsBtn').addEventListener('click', () => {
-      document.getElementById('imageUrls').value = '';
-      document.getElementById('enqueueStatus').textContent = '';
-    });
-
     async function enqueueImages(urls) {
-      const statusEl = document.getElementById('enqueueStatus');
-      const btn = document.getElementById('enqueueUrlsBtn');
-      const enqueueAllBtn = document.getElementById('enqueueAllBtn');
+      const statusEl = document.getElementById('searchStatus');
+      const btn = document.getElementById('enqueueSelectedBtn');
 
       statusEl.textContent = `Enqueueing ${urls.length} image${urls.length !== 1 ? 's' : ''}…`;
       statusEl.style.color = 'var(--accent)';
       btn.disabled = true;
-      enqueueAllBtn.disabled = true;
 
       try {
         const result = await api.enqueueImages(urls);
         statusEl.textContent = `Success! Batch ${result.batchId.slice(0, 8)}… with ${result.count} image${result.count !== 1 ? 's' : ''} enqueued.`;
         statusEl.style.color = 'var(--success)';
-        document.getElementById('imageUrls').value = '';
         state.selectedImages.clear();
         renderImageGrid();
-        loadRecentImages();
       } catch (err) {
         console.error('Enqueue failed:', err);
         statusEl.textContent = `Error: ${err.message}`;
         statusEl.style.color = 'var(--danger)';
       } finally {
         btn.disabled = false;
-        enqueueAllBtn.disabled = false;
       }
     }
-
-    // Recent Images
-    async function loadRecentImages() {
-      const limit = document.getElementById('recentLimit').value;
-      const tbody = document.getElementById('recentTableBody');
-
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center loading"><div class="spinner"></div>Loading…</td></tr>';
-
-      try {
-        // We need to query the database directly - for now use a workaround
-        // In a real app, you'd add an endpoint like GET /images?limit=50
-        // For now, we'll show a message
-        tbody.innerHTML = `
-      <tr>
-        <td colspan="6" class="text-center empty-state">
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
-            <p class="empty-state-title">No direct API endpoint</p>
-            <p class="empty-state-desc">Add GET /images endpoint to backend to list recent images.</p>
-          </div>
-        </td>
-      </tr>
-    `;
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center empty-state"><div class="empty-state"><p class="empty-state-title">Error</p><p class="empty-state-desc">${err.message}</p></div></td></tr>`;
-      }
-    }
-
-    document.getElementById('refreshRecentBtn').addEventListener('click', loadRecentImages);
-    document.getElementById('recentLimit').addEventListener('change', loadRecentImages);
 
     // Image Modal
     function showImageModal(url, title) {
@@ -410,9 +283,6 @@ https://example.com/image3.jpg" rows="4"></textarea>
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeImageModal();
     });
-
-    // Initial load
-    loadRecentImages();
   </script>
 
   <style>
@@ -421,3 +291,6 @@ https://example.com/image3.jpg" rows="4"></textarea>
       box-shadow: 0 0 0 2px var(--accent-light), var(--shadow-lg);
     }
   </style>
+</body>
+
+</html>

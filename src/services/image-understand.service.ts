@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 import { getDataFromUrls } from "../middleware/request-utils.ts";
-import { ImageUnderstandRepository } from "../repositories/image-understand.repository.ts";
+import { ImageUnderstandRepository, type AnalysisResult, type UsageMetadata } from "../repositories/image-understand.repository.ts";
 import { ImageDBRepository } from "../repositories/image-db.repository.ts";
 import { CostLogDBRepository } from "../repositories/cost-log-db.repository.ts";
 import { z } from "zod";
@@ -23,6 +23,9 @@ export interface ValidatedImageData {
     confidence: number;
 }
 
+const GEMINI_FLASH_LITE_INPUT_COST_PER_TOKEN = 0.00000025;
+const GEMINI_FLASH_LITE_OUTPUT_COST_PER_TOKEN = 0.0000015;
+
 @injectable()
 export class ImageUnderstandService {
     constructor(
@@ -31,8 +34,8 @@ export class ImageUnderstandService {
         private costLogDBRepository: CostLogDBRepository
     ) { }
 
-    async understandImage(imageUrls: string[]): Promise<{ imageUrl: any; response: any }[]> {
-        const results: { imageUrl: any; response: any }[] = [];
+    async understandImage(imageUrls: string[]): Promise<{ imageUrl: any; response: AnalysisResult }[]> {
+        const results: { imageUrl: any; response: AnalysisResult }[] = [];
         const imageDatas = await getDataFromUrls(imageUrls, true);
         if (!imageDatas) {
             return [];
@@ -90,18 +93,27 @@ export class ImageUnderstandService {
         await this.imageDBRepository.update([imageId], { tag: tagData });
     }
 
-    async logCost(refId: string, callType: 'vision' | 'embedding', tokensOrUnits: number, costUsd: number): Promise<void> {
+    async logCost(refId: string, usage: UsageMetadata): Promise<void> {
+        console.log(`Gemini usage meta response: ${usage}`)
+        const inputTokens = usage.promptTokenCount ?? 0;
+        const outputTokens = usage.candidatesTokenCount ?? 0;
+        const totalTokens = usage.totalTokenCount ?? (inputTokens + outputTokens);
+
+        const inputCost = inputTokens * GEMINI_FLASH_LITE_INPUT_COST_PER_TOKEN;
+        const outputCost = outputTokens * GEMINI_FLASH_LITE_OUTPUT_COST_PER_TOKEN;
+        const totalCost = inputCost + outputCost;
+
         await this.costLogDBRepository.insert({
-            call_type: callType,
+            call_type: 'vision',
             ref_id: refId,
-            tokens_or_units: tokensOrUnits,
-            cost_usd: costUsd,
+            tokens_or_units: totalTokens,
+            cost_usd: totalCost,
         });
     }
 
     async understandAndProcessImage(imageId: string): Promise<ValidatedImageData | null> {
         const image = await this.imageDBRepository.findById(imageId);
-        
+
         if (!image) {
             console.log(`Image ${imageId} not found`);
             return null;
@@ -115,19 +127,28 @@ export class ImageUnderstandService {
         await this.imageDBRepository.update([imageId], { status: 'processing' });
 
         const aiResponses = await this.understandImage([image.url_path]);
-        if (aiResponses.length === 0 || !aiResponses[0]?.response) {
+        if (aiResponses.length === 0 || !aiResponses[0]?.response?.analysis) {
             await this.imageDBRepository.update([imageId], { status: 'failed' });
             return null;
         }
 
-        const aiResponse = aiResponses[0].response!;
+        const result = aiResponses[0].response!;
+        const aiResponse = result.analysis;
+        if (!aiResponse) {
+            await this.imageDBRepository.update([imageId], { status: 'failed' });
+            return null;
+        }
         const validated = await this.validateSchema(image.url_path, aiResponse);
         if (validated.error && validated.error !== 'Confidence is low') {
             await this.imageDBRepository.update([imageId], { status: 'failed' });
             return null;
         }
 
-        await this.logCost(imageId, 'vision', 1, 0.000125);
+        if (result.usageMetadata) {
+            await this.logCost(imageId, result.usageMetadata);
+        } else {
+            await this.logCost(imageId, { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 });
+        }
 
         const imageData: ValidatedImageData = {
             id: imageId,
