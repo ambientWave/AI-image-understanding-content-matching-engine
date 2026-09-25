@@ -53,6 +53,7 @@
 The **Image Understanding & Content Matching Engine** is a high-throughput, decoupled distributed backend system engineered to solve two fundamental problems in modern AI content delivery:
 1. **Automated Multimodal Image Extraction & Vector Indexing**: Ingesting high-volume image batches, extracting structured semantic annotations (subject, category, attributes, natural language captions, and safety confidence scores) via **Google Gemini 3.1 Flash Lite**, validating the responses with **Zod**, and persisting dual vector representations (**CLIP ViT-B/32** image embeddings and **Nomic Embed Text v1.5** text embeddings) in **ChromaDB**.
 2. **Contextual Article-to-Image Matching with Semantic Guardrails**: Ingesting long-form blog and article URLs, generating zero-cost local summaries with quantized **HuggingFace T5-Small**, converting post summaries into high-dimensional embeddings, and executing high-precision vector similarity retrieval against pre-indexed images with configurable similarity thresholds ($\ge 0.80$) to eliminate false-positive image recommendations.
+3. **Accurate Token-Based Cost Accounting**: Real-time token counting via Gemini's `usageMetadata` with official per-token pricing ($0.25/1M input, $1.50/1M output), replacing flat-rate estimation.
 
 The system combines **Express 5**, **TypeScript**, **PostgreSQL 16**, **Redis 7 + BullMQ 6**, **TSyringe Dependency Injection**, **Zod**, and a responsive dashboard.
 
@@ -260,10 +261,14 @@ Unlike opaque AI applications, this system accounts for every micro-dollar spent
 
 $$\text{Total Cost} = \sum \text{Cost}_{\text{Vision}} + \sum \text{Cost}_{\text{Embedding}} + \sum \text{Cost}_{\text{Summarization}}$$
 
-- **Gemini Vision**: Logged at **$0.000125 per image**.
+- **Gemini Vision**: Billed at actual token usage via `usageMetadata`:
+  - Input tokens: **$0.25 / 1M tokens**
+  - Output tokens: **$1.50 / 1M tokens**
+  - Image tokens counted automatically (258 tokens per ≤384px image, tiled for larger)
+  - Pre-request estimation available via `models.countTokens()`
 - **Nomic Embeddings**: Logged at $\left(\frac{\text{Text Length}}{4 \times 1000}\right) \times \$0.00002$.
 - **Local T5-Small Summarization**: Logged at **$0.000000**.
-- Every single API interaction writes an immutable record to the `cost_log` table with its exact timestamp, calling component, reference UUID, units consumed, and total USD.
+- Every single API interaction writes an immutable record to the `cost_log` table with its exact timestamp, calling component, reference UUID, **total tokens consumed (input + output)**, and total USD.
 
 ---
 
@@ -277,7 +282,7 @@ flowchart TD
 
     subgraph PresentationLayer ["1. Presentation & Transport Layer"]
         Router["🛣️ Express 5 Router\n(/images, /posts, /jobs, /cost-log)\n• Pure HTTP translation • No business logic"]
-        Static["🎨 Static SPA Dashboard\n(Dashboard, Jobs, Images, Posts, Ranking)"]
+        Static["🎨 Static SPA Dashboard\n(Dashboard, Download, Jobs, Images, Posts, Ranking)"]
         IoC["💉 TSyringe DI Container\n(Keeps Model Singletons & Pools Resident in Memory)"]
     end
 
@@ -728,6 +733,12 @@ Searches the Pexels API for curated, high-resolution stock photography to feed i
 }
 ```
 
+#### `GET /download.html`
+Web-based Pexels image discovery interface for searching, previewing, and selecting images to enqueue.
+
+- **Features**: Search query, results per page (10-50), multi-select grid, double-click preview modal, batch enqueue to `POST /images`
+- **Navigation**: Accessible via "Download" link in top navigation bar
+
 ---
 
 ### Post Processing & Semantic Matching Endpoints
@@ -883,7 +894,7 @@ The application serves a clean, responsive dashboard directly from `/public`:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  IMAGE UNDERSTANDING ENGINE | Dashboard   Jobs   Images   Posts   Ranking   │
+│  IMAGE UNDERSTANDING ENGINE | Dashboard   Download   Jobs   Images   Posts   Ranking   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -891,16 +902,22 @@ The application serves a clean, responsive dashboard directly from `/public`:
    - High-level KPIs: Total Images Processed, Total Posts Processed, 24-Hour Expenditure (USD), Average Cost Per Vision Call.
    - Interactive Cost Log Explorer with real-time filtering by Call Type (`vision`, `embedding`, `summarization`) and Time Window.
    - Recent Activity Stream auto-refreshing every 30 seconds.
-2. **Jobs Monitor (`/jobs.html`)**:
+2. **Image Discovery (`/download.html`)**:
+   - Search Pexels stock photography with query + results-per-page selector
+   - Masonry grid with lazy-loaded thumbnails, photographer credit, dimensions
+   - Click to select/deselect (visual accent border feedback)
+   - Double-click for full-screen modal preview
+   - "Enqueue Selected" batches chosen URLs directly into `POST /images` pipeline
+3. **Jobs Monitor (`/jobs.html`)**:
    - Dual visualization modes: **Tree Table View** and **Interactive Kanban Board**.
    - Live queue status tracking across `pending`, `processing`, `completed`, `embedding`, `embedded`, and `failed`.
    - Detailed modal inspection showing attempt counts, stack traces, and failure reasons.
-3. **Image Ingestion Hub (`/images.html`)**:
+4. **Image Ingestion Hub (`/images.html`)**:
    - Direct integration with Pexels API: Search stock photos, multi-select, and enqueue directly into BullMQ.
    - Manual bulk URL enqueue textarea for custom datasets.
-4. **Post Ingestion Portal (`/posts.html`)**:
+5. **Post Ingestion Portal (`/posts.html`)**:
    - Bulk URL ingestion for web articles, Wikipedia entries, and blog content.
-5. **Semantic Ranking & Evaluation Studio (`/ranking.html`)**:
+6. **Semantic Ranking & Evaluation Studio (`/ranking.html`)**:
    - Enter any processed Post UUID to preview the generated summary.
    - Real-time Cosine Similarity evaluation against indexed images.
    - Interactive similarity threshold slider ($\ge 0.70$ to $0.90$).

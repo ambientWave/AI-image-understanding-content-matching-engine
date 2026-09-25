@@ -94,7 +94,6 @@ export class ImageUnderstandService {
     }
 
     async logCost(refId: string, usage: UsageMetadata): Promise<void> {
-        console.log(`Gemini usage meta response: ${usage}`)
         const inputTokens = usage.promptTokenCount ?? 0;
         const outputTokens = usage.candidatesTokenCount ?? 0;
         const totalTokens = usage.totalTokenCount ?? (inputTokens + outputTokens);
