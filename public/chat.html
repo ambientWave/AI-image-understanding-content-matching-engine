@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Image Understanding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="header">
+      <div class="header-brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="M21 15l-5-5L5 17" />
+        </svg>
+        <span>Image Understanding</span>
+      </div>
+      <nav class="nav">
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+        <a href="/download.html" class="nav-link">Download</a>
+        <a href="/jobs.html" class="nav-link">Jobs</a>
+        <a href="/images.html" class="nav-link">Images</a>
+        <a href="/posts.html" class="nav-link">Posts</a>
+        <a href="/ranking.html" class="nav-link">Ranking</a>
+        <a href="/chat.html" class="nav-link active">Chat</a>
+      </nav>
+    </header>
+
+    <main class="chat-page-main">
+
+      <!-- Sidebar: Context selector -->
+      <aside class="chat-sidebar">
+        <div class="sidebar-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Context
+        </div>
+
+        <div class="tabs sidebar-tabs" role="tablist">
+          <button class="tab active" role="tab" data-tab="post" id="tabPost">Post</button>
+          <button class="tab" role="tab" data-tab="images" id="tabImages">Images</button>
+          <button class="tab" role="tab" data-tab="evaluation" id="tabEvaluation">Evaluation</button>
+        </div>
+
+        <div class="tab-panel sidebar-panel" id="panelPost" role="tabpanel" style="display: block;">
+          <div class="form-group">
+            <label class="form-label" for="chatPostId">Post ID</label>
+            <input type="text" class="form-input" id="chatPostId" placeholder="Enter post UUID" autocomplete="off">
+            <p class="form-hint">Post must be summarized + embedded</p>
+          </div>
+        </div>
+
+        <div class="tab-panel sidebar-panel" id="panelImages" role="tabpanel" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="chatImageSearch">Search Images</label>
+            <input type="text" class="form-input" id="chatImageSearch" placeholder="Search Pexels…" autocomplete="off">
+          </div>
+          <div class="image-grid" id="chatImageGrid" style="margin-top: 12px;"></div>
+          <div id="chatSelectedImages" class="form-hint" style="margin-top: 8px;">No images selected</div>
+        </div>
+
+        <div class="tab-panel sidebar-panel" id="panelEvaluation" role="tabpanel" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="chatEvalSelect">Recent Evaluations</label>
+            <select class="form-select" id="chatEvalSelect">
+              <option value="">Select an evaluation…</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="context-status-bar">
+          <span id="contextStatus">No context selected</span>
+        </div>
+      </aside>
+
+      <!-- Chat area -->
+      <section class="chat-section">
+        <div class="chat-topbar">
+          <div class="chat-topbar-title">
+            <div class="ai-status-dot" id="aiStatusDot"></div>
+            Conversational RAG
+          </div>
+          <div class="chat-topbar-actions">
+            <label class="stream-toggle-label">
+              <input type="checkbox" id="chatStreamToggle" checked>
+              <span>Streaming</span>
+            </label>
+            <button class="btn btn-secondary btn-sm" id="clearChatBtn">Clear</button>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-empty-state" id="chatEmptyState">
+            <div class="empty-glow-ring">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <p class="empty-title">Start a conversation</p>
+            <p class="empty-desc">Select a context on the left, then ask anything about your images or posts.</p>
+          </div>
+        </div>
+
+        <div class="chat-input-dock">
+          <div class="chat-input-row">
+            <textarea class="chat-textarea" id="chatInput"
+              placeholder="Ask about images, posts, or request analysis…" rows="1"></textarea>
+            <button class="send-btn" id="sendBtn" aria-label="Send message">
+              <svg id="sendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </div>
+          <p class="input-hint">Enter to send · Shift+Enter for new line</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Citation Modal -->
+  <div class="modal-overlay" id="citationModal" role="dialog" aria-modal="true" aria-labelledby="citationModalTitle">
+    <div class="modal citation-modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="citationModalTitle">Candidate Details</h3>
+        <button class="modal-close" id="citationModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="citationModalBody"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api } from '/js/api.js';
+
+    const state = {
+      activeTab: 'post',
+      selectedPostId: null,
+      selectedImageIds: new Set(),
+      selectedEvaluation: null,
+      evaluations: [],
+      streaming: false
+    };
+
+    const tabs         = document.querySelectorAll('.tab');
+    const panels       = document.querySelectorAll('.tab-panel');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput    = document.getElementById('chatInput');
+    const sendBtn      = document.getElementById('sendBtn');
+    const sendIcon     = document.getElementById('sendIcon');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const contextStatus      = document.getElementById('contextStatus');
+    const citationModal      = document.getElementById('citationModal');
+    const citationModalBody  = document.getElementById('citationModalBody');
+    const citationModalTitle = document.getElementById('citationModalTitle');
+    const citationModalClose = document.getElementById('citationModalClose');
+    const aiStatusDot        = document.getElementById('aiStatusDot');
+
+    // ── Tab switching ────────────────────────────────────────────────────────
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        state.activeTab = tabName;
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+        panels.forEach(p => p.style.display = p.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}` ? 'block' : 'none');
+        updateContextStatus();
+      });
+    });
+
+    // ── Post ID ──────────────────────────────────────────────────────────────
+    document.getElementById('chatPostId').addEventListener('input', e => {
+      state.selectedPostId = e.target.value.trim() || null;
+      updateContextStatus();
+    });
+
+    // ── Image search ─────────────────────────────────────────────────────────
+    let imageSearchDebounce;
+    document.getElementById('chatImageSearch').addEventListener('input', async e => {
+      clearTimeout(imageSearchDebounce);
+      const query = e.target.value.trim();
+      if (!query) { document.getElementById('chatImageGrid').innerHTML = ''; return; }
+      imageSearchDebounce = setTimeout(async () => {
+        try {
+          const data = await api.searchImages(query);
+          renderImageSearchResults(data.photos || data || []);
+        } catch (err) { console.error('Image search failed:', err); }
+      }, 300);
+    });
+
+    function renderImageSearchResults(photos) {
+      const grid = document.getElementById('chatImageGrid');
+      grid.innerHTML = photos.map(photo => {
+        const url = photo.src?.large || photo.src?.original || photo.src?.medium || photo.url;
+        const id  = photo.id;
+        const sel = state.selectedImageIds.has(id);
+        return `
+          <div class="image-card ${sel ? 'selected' : ''}" data-id="${id}" data-url="${url}" style="cursor:pointer">
+            <img class="image-card-img" src="${url}" alt="${photo.alt || 'Image'}" loading="lazy"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:180px;align-items:center;justify-content:center;background:var(--bg);color:var(--fg-subtle);font-size:.75rem">Failed</div>
+            <div class="image-card-body">
+              <div class="image-card-title" title="${photo.alt || ''}">${photo.alt || 'Untitled'}</div>
+              <div class="image-card-meta">
+                <span>📷 ${photo.photographer || 'Unknown'}</span>
+                <span class="tag" style="background:${sel ? 'var(--accent)' : 'var(--accent-light)'};color:${sel ? 'white' : 'var(--accent)'}">${sel ? '✓' : '+'}</span>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      grid.querySelectorAll('.image-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.dataset.id;
+          state.selectedImageIds.has(id) ? state.selectedImageIds.delete(id) : state.selectedImageIds.add(id);
+          renderImageSearchResults(photos);
+          updateSelectedImagesDisplay();
+        });
+      });
+    }
+
+    function updateSelectedImagesDisplay() {
+      const count = state.selectedImageIds.size;
+      const el = document.getElementById('chatSelectedImages');
+      el.textContent = count === 0 ? 'No images selected' : `${count} image${count !== 1 ? 's' : ''} selected`;
+      el.style.color = count ? 'var(--success)' : '';
+    }
+
+    // ── Evaluations ──────────────────────────────────────────────────────────
+    function loadEvaluations() {
+      const evals = JSON.parse(localStorage.getItem('recentEvaluations') || '[]');
+      state.evaluations = evals.filter(e => e?.postId && e.timestamp);
+      const select = document.getElementById('chatEvalSelect');
+      select.innerHTML = '<option value="">Select an evaluation…</option>' +
+        state.evaluations.map((e, i) =>
+          `<option value="${i}">${formatTime(e.timestamp)} – ${e.postId.slice(0, 12)}… (${e.acceptedCount} accepted)</option>`
+        ).join('');
+    }
+
+    function formatTime(ts) {
+      try { return new Date(ts).toLocaleString(); } catch { return ts; }
+    }
+
+    document.getElementById('chatEvalSelect').addEventListener('change', e => {
+      const idx = parseInt(e.target.value, 10);
+      state.selectedEvaluation = isNaN(idx) ? null : state.evaluations[idx];
+      updateContextStatus();
+    });
+
+    function updateContextStatus() {
+      let label = '';
+      if (state.activeTab === 'post' && state.selectedPostId) {
+        label = `Post: ${state.selectedPostId.slice(0, 12)}…`;
+      } else if (state.activeTab === 'images' && state.selectedImageIds.size > 0) {
+        label = `${state.selectedImageIds.size} image${state.selectedImageIds.size !== 1 ? 's' : ''} selected`;
+      } else if (state.activeTab === 'evaluation' && state.selectedEvaluation) {
+        label = `Eval: ${state.selectedEvaluation.postId.slice(0, 12)}…`;
+      }
+      contextStatus.textContent = label || 'No context selected';
+      contextStatus.className = label ? 'context-label context-label--active' : 'context-label';
+    }
+
+    // ── Send message ─────────────────────────────────────────────────────────
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text || state.streaming) return;
+
+      let postId = null, imageIds = [];
+      if (state.activeTab === 'post') postId = state.selectedPostId;
+      else if (state.activeTab === 'images') imageIds = Array.from(state.selectedImageIds);
+      else if (state.activeTab === 'evaluation' && state.selectedEvaluation) postId = state.selectedEvaluation.postId;
+
+      if (!postId && imageIds.length === 0) {
+        alert('Please select a context (post, images, or evaluation)');
+        return;
+      }
+
+      addMessage('user', text);
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+
+      state.streaming = true;
+      setButtonState('loading');
+      setAiStatus('thinking');
+
+      // Add thinking message
+      const assistantMessageEl = addMessage('assistant', '', true);
+      showThinking(assistantMessageEl);
+      let fullText = '';
+
+      try {
+        await api.rag.chatStream(
+          { query: text, postId, imageIds, topK: 10 },
+          data => {
+            if (data.token) {
+              if (fullText === '') hideThinking(assistantMessageEl); // first token – remove thinking
+              fullText += data.token;
+              assistantMessageEl.contentEl.textContent = fullText;
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            if (data.done) {
+              if (fullText === '') hideThinking(assistantMessageEl); // no token but done
+              if (data.citations?.length > 0) renderCitations(assistantMessageEl, data.citations);
+              state.streaming = false;
+              setButtonState('idle');
+              setAiStatus('idle');
+            }
+          }
+        );
+      } catch (err) {
+        console.error('Chat error:', err);
+        hideThinking(assistantMessageEl);
+        assistantMessageEl.contentEl.textContent = 'Error: ' + err.message;
+        assistantMessageEl.contentEl.style.color = 'var(--danger)';
+        state.streaming = false;
+        setButtonState('idle');
+        setAiStatus('idle');
+      }
+    }
+
+    // ── Thinking bubble ──────────────────────────────────────────────────────
+    function showThinking(msgObj) {
+      msgObj.contentEl.classList.add('thinking-bubble');
+      msgObj.contentEl.innerHTML = `
+        <div class="thinking-dots">
+          <span></span><span></span><span></span>
+        </div>`;
+    }
+
+    function hideThinking(msgObj) {
+      msgObj.contentEl.classList.remove('thinking-bubble');
+      msgObj.contentEl.innerHTML = '';
+    }
+
+    // ── AI status dot ────────────────────────────────────────────────────────
+    function setAiStatus(status) {
+      aiStatusDot.className = status === 'thinking' ? 'ai-status-dot ai-status-dot--thinking' : 'ai-status-dot';
+    }
+
+    // ── Send button states ───────────────────────────────────────────────────
+    const SEND_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>`;
+
+    function setButtonState(state) {
+      if (state === 'loading') {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = `<span class="btn-spinner"></span>`;
+      } else {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = SEND_ICON_SVG;
+      }
+    }
+
+    // ── Add message ──────────────────────────────────────────────────────────
+    function addMessage(role, content, isStreaming = false) {
+      document.getElementById('chatEmptyState')?.remove();
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `msg msg--${role}`;
+
+      const avatarEl = document.createElement('div');
+      avatarEl.className = `msg-avatar msg-avatar--${role}`;
+      avatarEl.textContent = role === 'user' ? 'You' : 'AI';
+
+      const bubbleEl = document.createElement('div');
+      bubbleEl.className = `msg-bubble msg-bubble--${role}`;
+
+      const contentEl = document.createElement('div');
+      contentEl.className = 'msg-content';
+      contentEl.textContent = content;
+
+      bubbleEl.appendChild(contentEl);
+      if (role === 'user') {
+        wrapper.appendChild(bubbleEl);
+        wrapper.appendChild(avatarEl);
+      } else {
+        wrapper.appendChild(avatarEl);
+        wrapper.appendChild(bubbleEl);
+      }
+
+      chatMessages.appendChild(wrapper);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      return { wrapper, bubbleEl, contentEl, citationsContainer: null };
+    }
+
+    // ── Citation row ─────────────────────────────────────────────────────────
+    function renderCitations(messageObj, citations) {
+      const strip = document.createElement('div');
+      strip.className = 'citation-strip';
+
+      citations.forEach(cite => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'citation-card';
+        card.innerHTML = `
+          ${cite.imageUrl
+            ? `<img class="citation-thumb" src="${cite.imageUrl}" alt="${cite.subject || ''}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="citation-thumb citation-thumb--placeholder">#${cite.index}</div>`}
+          <div class="citation-info">
+            <span class="citation-index">#${cite.index}</span>
+            <span class="citation-subject">${cite.subject || 'unknown'}</span>
+            <span class="citation-cat">${cite.category || ''}</span>
+          </div>`;
+        card.addEventListener('click', () => showCitationModal(cite));
+        strip.appendChild(card);
+      });
+
+      messageObj.wrapper.appendChild(strip);
+      messageObj.citationsContainer = strip;
+    }
+
+    // ── Citation modal ───────────────────────────────────────────────────────
+    function showCitationModal(cite) {
+      citationModalTitle.textContent = `Candidate #${cite.index} — ${cite.subject || 'unknown'}`;
+      citationModalBody.innerHTML = `
+        <div class="cite-modal-grid">
+          ${cite.imageUrl
+            ? `<img src="${cite.imageUrl}" alt="${cite.caption || ''}" class="cite-modal-img" onerror="this.style.display='none'">`
+            : ''}
+          <dl class="cite-modal-dl">
+            <dt>Subject</dt>   <dd>${cite.subject || '—'}</dd>
+            <dt>Category</dt>  <dd>${cite.category || '—'}</dd>
+            <dt>Confidence</dt><dd>${(cite.confidence * 100).toFixed(1)}%</dd>
+            <dt>Caption</dt>   <dd>${cite.caption || '—'}</dd>
+          </dl>
+        </div>`;
+      citationModal.classList.add('open');
+    }
+
+    citationModalClose.addEventListener('click', () => citationModal.classList.remove('open'));
+    citationModal.addEventListener('click', e => { if (e.target === citationModal) citationModal.classList.remove('open'); });
+
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+    });
+
+    clearChatBtn.addEventListener('click', () => {
+      chatMessages.innerHTML = `
+        <div class="chat-empty-state" id="chatEmptyState">
+          <div class="empty-glow-ring">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <p class="empty-title">Start a conversation</p>
+          <p class="empty-desc">Select a context on the left, then ask anything about your images or posts.</p>
+        </div>`;
+    });
+
+    loadEvaluations();
+    updateContextStatus();
+  </script>
+
+  <style>
+    /* ── Page Layout ───────────────────────────────────────────────────────── */
+    body { font-family: 'Inter', var(--font-sans); }
+
+    .chat-page-main {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: calc(100vh - 60px);
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────────────────── */
+    .chat-sidebar {
+      border-right: 1px solid var(--border);
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 18px 20px 12px;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--fg-subtle);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-tabs {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 4px;
+    }
+
+    .sidebar-tabs .tab {
+      flex: 1;
+      font-size: 0.75rem;
+      padding: 6px 4px;
+    }
+
+    .sidebar-panel {
+      padding: 16px;
+      flex: 1;
+    }
+
+    .context-status-bar {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      margin-top: auto;
+    }
+
+    .context-label {
+      font-size: 0.75rem;
+      color: var(--fg-subtle);
+    }
+
+    .context-label--active {
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* ── Chat section ────────────────────────────────────────────────────────  */
+    .chat-section {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #f5f7fb;
+    }
+
+    .chat-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-topbar-title {
+      font-weight: 600;
+      font-size: 0.9375rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--fg);
+    }
+
+    .chat-topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stream-toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+      color: var(--fg-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* ── AI status dot ──────────────────────────────────────────────────────── */
+    .ai-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+
+    .ai-status-dot--thinking {
+      background: var(--accent);
+      animation: dot-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.7); }
+    }
+
+    /* ── Messages ───────────────────────────────────────────────────────────── */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .msg {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 80%;
+    }
+
+    .msg--user { align-self: flex-end; flex-direction: row-reverse; max-width: 70%; }
+    .msg--assistant { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      letter-spacing: .02em;
+    }
+
+    .msg-avatar--user {
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      color: white;
+    }
+
+    .msg-avatar--assistant {
+      background: linear-gradient(135deg, #059669, #0891b2);
+      color: white;
+    }
+
+    .msg-bubble {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 100%;
+    }
+
+    .msg-content {
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.65;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .msg-bubble--user .msg-content {
+      background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.25);
+    }
+
+    .msg-bubble--assistant .msg-content {
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Thinking bubble ────────────────────────────────────────────────────── */
+    .thinking-bubble {
+      background: var(--bg-elevated) !important;
+      border: 1px solid transparent !important;
+      background-clip: padding-box !important;
+      position: relative;
+      overflow: visible !important;
+    }
+
+    .thinking-bubble::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      background: linear-gradient(90deg, var(--accent), #7c3aed, #0891b2, var(--accent));
+      background-size: 300% 100%;
+      animation: glow-sweep 2s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes glow-sweep {
+      0%   { background-position: 0% 50%; filter: blur(4px) brightness(1.2); }
+      50%  { background-position: 100% 50%; filter: blur(6px) brightness(1.4); }
+      100% { background-position: 0% 50%; filter: blur(4px) brightness(1.2); }
+    }
+
+    .thinking-dots {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 2px;
+    }
+
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: thinking-bounce 1.2s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(2) { animation-delay: .2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes thinking-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .5; }
+      40%           { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ── Citations strip ────────────────────────────────────────────────────── */
+    .citation-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px 0 4px;
+      scrollbar-width: thin;
+    }
+
+    .citation-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px 6px 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all var(--transition);
+      flex-shrink: 0;
+      max-width: 180px;
+      text-align: left;
+    }
+
+    .citation-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+      transform: translateY(-1px);
+    }
+
+    .citation-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--border);
+    }
+
+    .citation-thumb--placeholder {
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .citation-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .citation-index {
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .citation-subject {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .citation-cat {
+      font-size: 0.6875rem;
+      color: var(--fg-subtle);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Input dock ─────────────────────────────────────────────────────────── */
+    .chat-input-dock {
+      padding: 16px 24px 18px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .chat-input-row:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    .chat-textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--fg);
+      line-height: 1.5;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .chat-textarea::placeholder { color: var(--fg-subtle); }
+
+    .send-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      box-shadow: 0 3px 10px rgba(37,99,235,.35);
+      color: white;
+    }
+
+    .send-btn svg { width: 17px; height: 17px; }
+    .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(37,99,235,.4); }
+    .send-btn:active:not(:disabled) { transform: translateY(0); }
+    .send-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    .btn-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .input-hint {
+      font-size: 0.6875rem;
+      color: var(--fg-subtle);
+      margin-top: 6px;
+      padding-left: 4px;
+    }
+
+    /* ── Empty state ─────────────────────────────────────────────────────────── */
+    .chat-empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--fg-muted);
+      padding: 40px;
+    }
+
+    .empty-glow-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      animation: ring-pulse 3s ease-in-out infinite;
+    }
+
+    .empty-glow-ring svg {
+      width: 36px;
+      height: 36px;
+      color: var(--accent);
+      opacity: .7;
+    }
+
+    @keyframes ring-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,.15); }
+      50%       { box-shadow: 0 0 0 16px rgba(37,99,235,0); }
+    }
+
+    .empty-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+    }
+
+    .empty-desc {
+      font-size: 0.8125rem;
+      color: var(--fg-subtle);
+      text-align: center;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+
+    /* ── Citation modal ──────────────────────────────────────────────────────── */
+    .citation-modal { max-width: 560px; max-height: 85vh; }
+
+    .cite-modal-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .cite-modal-img {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: var(--radius);
+    }
+
+    .cite-modal-dl {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 8px 12px;
+    }
+
+    .cite-modal-dl dt {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      align-self: start;
+      padding-top: 1px;
+    }
+
+    .cite-modal-dl dd {
+      font-size: 0.875rem;
+      color: var(--fg);
+    }
+
+    /* ── Scrollbar polish ────────────────────────────────────────────────────── */
+    .chat-messages::-webkit-scrollbar,
+    .citation-strip::-webkit-scrollbar { width: 4px; height: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb,
+    .citation-strip::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+    /* ── Tab animation ───────────────────────────────────────────────────────── */
+    .tab-panel { animation: fadeUp 150ms ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</body>
+
+</html>

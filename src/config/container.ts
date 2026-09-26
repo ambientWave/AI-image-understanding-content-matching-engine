@@ -10,6 +10,7 @@ import { PostDBRepository } from '../repositories/post-db.repository.ts';
 import { TextSummarizeRepository } from '../repositories/post-summarize.repository.ts';
 import { CostLogDBRepository } from '../repositories/cost-log-db.repository.ts';
 import { SuggestionDBRepository } from '../repositories/suggestion-db.repository.ts';
+import { RagRepository } from '../repositories/rag.repository.ts';
 
 // Services
 import { TextEmbedService } from '../services/text-embed.service.ts';
@@ -25,6 +26,7 @@ import { EvaluationService } from '../services/evaluation.service.ts';
 import { DatabaseInitializerService } from '../services/database-initializer.service.ts';
 import { ImageQueryService } from '../services/image-query.service.ts';
 import { PostQueryService } from '../services/post-query.service.ts';
+import { RagService } from '../services/rag.service.ts';
 
 // Create repository instances (singletons - models load once)
 const textEmbedRepository = new TextEmbedRepository();
@@ -35,6 +37,7 @@ const postDBRepository = new PostDBRepository();
 const textSummarizeRepository = new TextSummarizeRepository();
 const costLogDBRepository = new CostLogDBRepository();
 const suggestionDBRepository = new SuggestionDBRepository();
+const ragRepository = new RagRepository();
 
 // Register repositories as values (already instantiated)
 container.registerInstance('TextEmbedRepository', textEmbedRepository);
@@ -45,6 +48,7 @@ container.registerInstance('PostDBRepository', postDBRepository);
 container.registerInstance('TextSummarizeRepository', textSummarizeRepository);
 container.registerInstance('CostLogDBRepository', costLogDBRepository);
 container.registerInstance('SuggestionDBRepository', suggestionDBRepository);
+container.registerInstance('RagRepository', ragRepository);
 
 // Create service instances with dependencies
 const textEmbedService = new TextEmbedService(textEmbedRepository, imageDBRepository, postDBRepository, costLogDBRepository);
@@ -54,7 +58,8 @@ const postDownloadService = new PostDownloadService();
 const postSummarizeService = new PostSummarizeService(textSummarizeRepository, postDBRepository, postDownloadService, costLogDBRepository);
 const postEmbedService = new PostEmbedService(textEmbedRepository);
 const matchingService = new MatchingService(textEmbedRepository);
-const evaluationService = new EvaluationService(matchingService, postDBRepository);
+const ragService = new RagService(ragRepository, costLogDBRepository);
+const evaluationService = new EvaluationService(matchingService, postDBRepository, ragService);
 const jobQueueService = new JobQueueService();
 const imageQueryService = new ImageQueryService(imageDBRepository);
 const postQueryService = new PostQueryService(postDBRepository);
@@ -89,6 +94,7 @@ container.registerInstance('EvaluationService', evaluationService);
 container.registerInstance('JobQueueService', jobQueueService);
 container.registerInstance('ImageQueryService', imageQueryService);
 container.registerInstance('PostQueryService', postQueryService);
+container.registerInstance('RagService', ragService);
 container.registerInstance('IngestionOrchestratorService', ingestionOrchestratorService);
 container.registerInstance('DatabaseInitializerService', databaseInitializerService);
 

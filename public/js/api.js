@@ -41,6 +41,40 @@ export const api = {
     return request(`/posts?${qs}`);
   },
 
+  // RAG
+  rag: {
+    getModels: () => request('/rag/models'),
+    explain: (body) => request('/rag/explain', { method: 'POST', body }),
+    chat: (body) => request('/rag/chat', { method: 'POST', body }),
+    chatStream: (body, onToken) => {
+      return fetch('/rag/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        if (!reader) return;
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                onToken(data);
+              } catch {}
+            }
+          }
+        }
+      });
+    }
+  },
+
   // Cost Log
   getCostLog: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

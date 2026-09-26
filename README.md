@@ -1,7 +1,7 @@
 # Image Understanding & Content Matching Engine
 
 > **Enterprise-Grade Asynchronous Multimodal AI Processing Pipeline & Semantic Content Matching System**  
-> Built with **Express 5**, **TypeScript**, **PostgreSQL 16**, **Redis 7 + BullMQ 6**, **ChromaDB**, **TSyringe**, **Zod**, **Google Gemini 3.1 Flash Lite**, **CLIP**, and **Nomic Embeddings**.
+> Built with **Express 5**, **TypeScript**, **PostgreSQL 16**, **Redis 7 + BullMQ 6**, **ChromaDB**, **TSyringe**, **Zod**, **Google Gemini 3.1 Flash Lite**, **CLIP**, **Nomic Embeddings**, and **Qwen2.5-1.5B-Instruct**.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-green.svg?logo=node.js)](https://nodejs.org/)
@@ -13,6 +13,7 @@
 [![Zod](https://img.shields.io/badge/Zod-Schema%20Validation-3E67B1.svg?logo=zod)](https://zod.dev/)
 [![TSyringe](https://img.shields.io/badge/TSyringe-IoC%20%2F%20DI-brightgreen.svg)](https://github.com/microsoft/tsyringe)
 [![Gemini Vision](https://img.shields.io/badge/Google%20GenAI-Gemini%203.1%20Flash%20Lite-4285F4.svg?logo=google)](https://ai.google.dev/)
+[![Qwen RAG](https://img.shields.io/badge/HuggingFace-Qwen2.5--1.5B--Instruct-yellow.svg?logo=huggingface)](https://huggingface.co/onnx-community/Qwen2.5-1.5B-Instruct)
 
 ---
 
@@ -169,27 +170,38 @@ Synchronous HTTP request-response processing breaks down under heavy multimodal 
 
 ### 4. Tiered Hybrid AI Model Strategy: Cost-Effectiveness via Quantized Local Models
 
-To maximize cost-effectiveness while preserving state-of-the-art multimodal vision capabilities, the engine employs a **two-tier hybrid AI model topology**:
+To maximize cost-effectiveness while preserving state-of-the-art multimodal vision capabilities, the engine employs a **three-tier hybrid AI model topology**:
 
 ```
-                                  ┌─────────────────────────────────────────────────────────┐
-                                  │               TIERED HYBRID AI TOPOLOGY                 │
-                                  └─────────────────────────────────────────────────────────┘
-                                                               │
-                              ┌────────────────────────────────┴────────────────────────────────┐
-                              ▼                                                                 ▼
-                ┌───────────────────────────┐                                     ┌───────────────────────────┐
-                │   TIER 1: LOCAL QUANTIZED │                                     │   TIER 2: CLOUD MULTIMODAL│
-                │     SMALL MODELS ($0)     │                                     │     FOUNDATION LLM        │
-                ├───────────────────────────┤                                     ├───────────────────────────┤
-                │ • CLIP ViT-B/32 (FP16)    │                                     │ • Google Gemini 3.1 Flash │
-                │   Visual dense embeddings │                                     │   Lite (or 2.5 Flash)     │
-                │ • Nomic Embed Text v1.5   │                                     │ • Deep semantic reasoning │
-                │   Semantic text vectors   │                                     │ • Detailed entity tagging │
-                │ • T5-Small Local Pipeline │                                     │ • Complex scene captions  │
-                │   Zero-cost summarization │                                     │ • Confidence scoring      │
-                │ ➔ Cost: $0.000000 / call │                                     │ ➔ Cost: $0.000125 / call  │
-                └───────────────────────────┘                                     └───────────────────────────┘
+                                   ┌─────────────────────────────────────────────────────────┐
+                                   │               TIERED HYBRID AI TOPOLOGY                 │
+                                   └─────────────────────────────────────────────────────────┘
+                                                                │
+                               ┌────────────────────────────────┴────────────────────────────────┐
+                               ▼                                                                 ▼
+                 ┌───────────────────────────┐                                     ┌───────────────────────────┐
+                 │   TIER 1: LOCAL QUANTIZED │                                     │   TIER 2: CLOUD MULTIMODAL│
+                 │     SMALL MODELS ($0)     │                                     │     FOUNDATION LLM        │
+                 ├───────────────────────────┤                                     ├───────────────────────────┤
+                 │ • CLIP ViT-B/32 (FP16)    │                                     │ • Google Gemini 3.1 Flash │
+                 │   Visual dense embeddings │                                     │   Lite (or 2.5 Flash)     │
+                 │ • Nomic Embed Text v1.5   │                                     │ • Deep semantic reasoning │
+                 │   Semantic text vectors   │                                     │ • Detailed entity tagging │
+                 │ • T5-Small Local Pipeline │                                     │ • Complex scene captions  │
+                 │   Zero-cost summarization │                                     │ • Confidence scoring      │
+                 │ ➔ Cost: $0.000000 / call  │                                     │ ➔ Cost: $0.000125 / call  │
+                 └───────────────────────────┘                                     └───────────────────────────┘
+                                                                │
+                                                                ▼
+                                                 ┌─────────────────────────────────────┐
+                                                 │   TIER 3: LOCAL RAG GENERATION ($0) │
+                                                 ├─────────────────────────────────────┤
+                                                 │ • Qwen2.5-1.5B-Instruct (FP16 ONNX) │
+                                                 │ • Grounded guard explanations       │
+                                                 │ • Conversational RAG over images    │
+                                                 │ • Context-aware chat with citations │
+                                                 │ ➔ Cost: $0.000000 / call            │
+                                                 └─────────────────────────────────────┘
 ```
 
 1. **Local Quantized Models for High-Frequency, Specialized Tasks ($0 API Cost)**:
@@ -199,6 +211,12 @@ To maximize cost-effectiveness while preserving state-of-the-art multimodal visi
 2. **Cloud Multimodal Foundation Model for Complex Visual Understanding**:
    - **Google Gemini 3.1 Flash Lite**: Reserved specifically for deep visual question answering, structured JSON schema extraction (subject, category, attributes, natural language caption), and confidence verification.
    - Billed at an economical **$0.000125 per image**, ensuring enterprise-grade visual intelligence at minimal expense.
+3. **Local RAG Generation for Context-Aware Reasoning ($0 API Cost)**:
+   - **Qwen2.5-1.5B-Instruct**: Running locally via `onnx-community/Qwen2.5-1.5B-Instruct` in FP16 ONNX format using HuggingFace Transformers.js.
+   - **Grounded Guard Explanations**: Replaces templated rejection reasons with LLM-generated explanations citing specific subject/category/confidence fields from retrieved candidates.
+   - **Conversational RAG**: Chat interface supporting queries over posts, images, or recent evaluations with Server-Sent Events (SSE) streaming and clickable citation thumbnails.
+   - **32K Context Window**: Supports up to 10 retrieved candidates for chat, top-5 for guard explanations.
+   - **Zero API Cost**: Runs entirely locally, logged in `cost_log` with `call_type: 'rag'` for token observability.
 
 ---
 
@@ -951,6 +969,66 @@ Aggregates financial expenditure across time windows (`1h`, `24h`, `7d`, `30d`).
   "avgCostPerCall": 0.000127
 }
 ```
+```
+
+---
+
+### RAG (Retrieval-Augmented Generation) Endpoints
+
+#### `GET /rag/models`
+Returns information about the loaded RAG model.
+
+- **Response (`200 OK`)**:
+```json
+{
+  "name": "Qwen2.5-1.5B-Instruct",
+  "modelId": "onnx-community/Qwen2.5-1.5B-Instruct",
+  "loaded": true,
+  "contextWindow": 32768,
+  "quantization": "fp16"
+}
+```
+
+#### `POST /rag/explain`
+Generates a grounded guard explanation for a specific candidate match using retrieved metadata.
+
+- **Request Body**:
+```json
+{
+  "postId": "7b884dbb-320d-45bf-97c2-3e28ceceb115",
+  "candidateIds": ["f47ac10b-58cc-4372-a567-0e02b2c3d479", "..."],
+  "isAccepted": true
+}
+```
+- **Response (`200 OK`)**:
+```json
+{
+  "explanation": "Candidate #1 is a good match because the post discusses foxes (subject=\"red fox\", category=\"animal\") and candidate #1 has subject=\"red fox\" with confidence=0.95.",
+  "inputTokens": 450,
+  "outputTokens": 87
+}
+```
+
+#### `POST /rag/chat`
+Conversational RAG endpoint with Server-Sent Events (SSE) streaming. Accepts a natural language query and optional context (postId, imageIds, or recent evaluation), retrieves top-10 candidates from ChromaDB, and streams a grounded response with citations.
+
+- **Request Body**:
+```json
+{
+  "query": "show me foxes",
+  "postId": "7b884dbb-320d-45bf-97c2-3e28ceceb115",
+  "imageIds": ["optional", "image", "uuids"],
+  "topK": 10
+}
+```
+- **Response (SSE Stream)**:
+```
+data: {"token": "Based on the retrieved candidates, ", "done": false}
+
+data: {"token": "there are 3 fox images...", "done": false}
+
+data: {"token": "", "done": true, "citations": [{"index": 1, "subject": "red fox", "category": "animal", "confidence": 0.95, "caption": "A sharp close-up photo...", "imageUrl": "https://..."}]}
+```
 
 ---
 
@@ -960,7 +1038,7 @@ The application serves a clean, responsive dashboard directly from `/public`:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│  IMAGE UNDERSTANDING ENGINE | Dashboard   Download   Jobs   Images   Posts   Ranking   │
+│  IMAGE UNDERSTANDING ENGINE | Dashboard   Download   Jobs   Images   Posts   Ranking   Chat   │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -992,6 +1070,12 @@ The application serves a clean, responsive dashboard directly from `/public`:
    - Real-time Cosine Similarity evaluation against indexed images.
    - Interactive similarity threshold slider ($\ge 0.70$ to $0.90$).
    - Visual candidate inspection displaying match badges, reasons, captions, and thumbnail previews.
+7. **Conversational RAG Chat (`/chat.html`)**:
+   - Context-aware chat over posts, images, and recent evaluations using Qwen2.5-1.5B-Instruct.
+   - Three context modes: Post ID, multi-image selection, or recent evaluation history.
+   - Server-Sent Events (SSE) streaming for real-time token-by-token response rendering.
+   - Clickable citation badges linking to candidate thumbnails and metadata.
+   - Streaming toggle, conversation clear, and auto-scroll.
 
 ---
 
@@ -1077,6 +1161,15 @@ Small, frequent tasks like visual embedding (`clip-vit-base-patch32`), text vect
 
 ### How does the system guarantee exactly-once processing across workers?
 Domain Services wrap execution in database transactions utilizing PostgreSQL row-level locks via `SELECT ... FOR UPDATE`. If multiple worker replicas attempt to process the same image simultaneously, only one acquires the lock; subsequent workers observe `status != 'pending'` and skip redundant execution.
+
+### How does the system guarantee exactly-once processing across workers?
+Domain Services wrap execution in database transactions utilizing PostgreSQL row-level locks via `SELECT ... FOR UPDATE`. If multiple worker replicas attempt to process the same image simultaneously, only one acquires the lock; subsequent workers observe `status != 'pending'` and skip redundant execution.
+
+### What is the RAG component and how does it work?
+The RAG (Retrieval-Augmented Generation) component uses **Qwen2.5-1.5B-Instruct** (via `onnx-community/Qwen2.5-1.5B-Instruct` in FP16 ONNX) running locally via HuggingFace Transformers.js. It provides two capabilities: (1) **Grounded Guard Explanations** — replaces templated reject/accept reasons with LLM-generated explanations citing specific subject/category/confidence fields from retrieved candidates, applied to both accepted and rejected matches; (2) **Conversational RAG Chat** — a `/chat.html` page with SSE streaming where users query over posts, images, or recent evaluations with clickable citation thumbnails. Both use top-5 (guard) or top-10 (chat) candidates from ChromaDB, cost $0 API (local model), and log token usage to `cost_log` with `call_type: 'rag'`.
+
+### Why use Qwen2.5-1.5B-Instruct instead of a larger model?
+Qwen2.5-1.5B-Instruct (~1.5B parameters) runs entirely locally in ~1.5GB VRAM (FP16 ONNX), providing strong instruction-following and reasoning capabilities at zero API cost. It fits comfortably alongside CLIP, Nomic, and T5-Small in the existing singleton model architecture, avoiding the latency and cost of cloud LLM calls while still generating coherent, citation-grounded explanations for guard decisions and chat responses.
 
 ---
 

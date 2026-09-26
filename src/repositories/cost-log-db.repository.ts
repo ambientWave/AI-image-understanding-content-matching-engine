@@ -52,7 +52,7 @@ export class CostLogDBRepository {
                 await this.pool.query(`
                     CREATE TABLE IF NOT EXISTS cost_log (
                         id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        call_type     TEXT NOT NULL CHECK (call_type in ('vision','embedding','summarization')),
+                        call_type     TEXT NOT NULL CHECK (call_type in ('vision','embedding','summarization','rag')),
                         ref_id        UUID NOT NULL,       -- image_id or post_id
                         tokens_or_units NUMERIC NOT NULL,
                         cost_usd      NUMERIC(10,6) NOT NULL,

@@ -7,6 +7,7 @@ import imageRoutes from './routes/image.routes.ts';
 import postRoutes from './routes/post.routes.ts';
 import jobRoutes from './routes/job.routes.ts';
 import costLogRoutes from './routes/cost-log.routes.ts';
+import ragRoutes from './routes/rag.routes.ts';
 import { DatabaseInitializerService } from './services/database-initializer.service.ts';
 import { visionWorker } from './workers/image-understand.worker.ts';
 import { textEmbedWorker } from './workers/text-embed.worker.ts';
@@ -54,6 +55,7 @@ app.use('/', imageRoutes);
 app.use('/', postRoutes);
 app.use('/', jobRoutes);
 app.use('/', costLogRoutes);
+app.use('/', ragRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -61,8 +63,8 @@ app.get('/health', (req, res) => {
 });
 
 // SPA fallback - serve dashboard.html for frontend routes
-const frontendRoutes = ['/dashboard', '/jobs', '/images', '/posts', '/ranking'];
-app.get(/^\/(dashboard|jobs|images|posts|ranking|download)(?:\/.*)?$/, (req, res) => {
+const frontendRoutes = ['/dashboard', '/jobs', '/images', '/posts', '/ranking', '/chat', '/download'];
+app.get(/^\/(dashboard|jobs|images|posts|ranking|download|chat)(?:\/.*)?$/, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 

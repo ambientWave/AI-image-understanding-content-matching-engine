@@ -1,6 +1,7 @@
 import { injectable } from 'tsyringe';
 import { MatchingService, type SimilarityResult } from './matching.service.ts';
 import { PostDBRepository } from '../repositories/post-db.repository.ts';
+import { RagService, type RagExplanation } from './rag.service.ts';
 
 const SIMILARITY_THRESHOLD = 0.8;
 
@@ -24,7 +25,8 @@ export interface EvaluationResponse {
 export class EvaluationService {
     constructor(
         private matchingService: MatchingService,
-        private postDBRepository: PostDBRepository
+        private postDBRepository: PostDBRepository,
+        private ragService: RagService
     ) { }
 
     async evaluate(postId: string, resultsNumber: number = 10): Promise<EvaluationResponse> {
@@ -42,22 +44,33 @@ export class EvaluationService {
 
         const similarImages = await this.matchingService.findSimilarImages(postEmbedding, resultsNumber);
 
-        const candidates: EvaluationCandidate[] = similarImages.map(img => {
+        const candidates: EvaluationCandidate[] = await Promise.all(similarImages.map(async (img) => {
             const isAccepted = img.similarity >= SIMILARITY_THRESHOLD;
             const candidateCaption = img.caption || 'No caption';
 
             let reason: string;
-            if (isAccepted) {
-                reason = `Similarity ${img.similarity.toFixed(2)} ≥ ${SIMILARITY_THRESHOLD} threshold`;
-            } else {
-                // Generate specific reason based on metadata
+            try {
                 const postCategory = this.extractCategory(postSummary);
-                const imageCategory = img.category || 'unknown';
-
-                if (postCategory && imageCategory !== 'unknown' && postCategory !== imageCategory) {
-                    reason = `Category mismatch: post about "${postCategory}", image is "${imageCategory}" (similarity ${img.similarity.toFixed(2)} < ${SIMILARITY_THRESHOLD})`;
+                const ragResult = await this.ragService.explainMatch(
+                    postSummary,
+                    postCategory,
+                    similarImages,
+                    isAccepted
+                );
+                reason = ragResult.explanation;
+            } catch (error) {
+                // Silent fallback to template reasons
+                if (isAccepted) {
+                    reason = `Similarity ${img.similarity.toFixed(2)} ≥ ${SIMILARITY_THRESHOLD} threshold`;
                 } else {
-                    reason = `Under threshold: similarity ${img.similarity.toFixed(2)} < ${SIMILARITY_THRESHOLD}`;
+                    const postCategory = this.extractCategory(postSummary);
+                    const imageCategory = img.category || 'unknown';
+
+                    if (postCategory && imageCategory !== 'unknown' && postCategory !== imageCategory) {
+                        reason = `Category mismatch: post about "${postCategory}", image is "${imageCategory}" (similarity ${img.similarity.toFixed(2)} < ${SIMILARITY_THRESHOLD})`;
+                    } else {
+                        reason = `Under threshold: similarity ${img.similarity.toFixed(2)} < ${SIMILARITY_THRESHOLD}`;
+                    }
                 }
             }
 
@@ -70,7 +83,7 @@ export class EvaluationService {
                 imageId: img.imageId,
                 imageUrl: img.imageUrl,
             };
-        });
+        }));
 
         return {
             postId: post.id,
@@ -80,7 +93,6 @@ export class EvaluationService {
     }
 
     private extractCategory(text: string): string | null {
-        // Simple keyword-based category extraction from post summary
         const lowerText = text.toLowerCase();
         const categories = ['fox', 'wolf', 'dog', 'cat', 'bird', 'animal', 'landscape', 'person', 'vehicle', 'building', 'food', 'plant'];
 
