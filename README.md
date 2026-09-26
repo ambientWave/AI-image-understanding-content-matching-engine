@@ -65,6 +65,8 @@ The system combines **Express 5**, **TypeScript**, **PostgreSQL 16**, **Redis 7 
 <img width="1869" height="899" alt="2" src="https://github.com/user-attachments/assets/02af7eee-4277-440b-9484-3eb35af41fa3" />
 <img width="1878" height="1596" alt="3" src="https://github.com/user-attachments/assets/cc602134-6dbf-476f-8a56-ff1da0a739d8" />
 <img width="1894" height="894" alt="4" src="https://github.com/user-attachments/assets/59c69637-a040-4324-847a-498007da042e" />
+<img width="1919" height="907" alt="5" src="https://github.com/user-attachments/assets/7c60fd1e-3fed-4fbf-a0e8-099ada7e77cc" />
+
 
 
 ---
@@ -189,7 +191,7 @@ To maximize cost-effectiveness while preserving state-of-the-art multimodal visi
                  │   Semantic text vectors   │                                     │ • Detailed entity tagging │
                  │ • T5-Small Local Pipeline │                                     │ • Complex scene captions  │
                  │   Zero-cost summarization │                                     │ • Confidence scoring      │
-                 │ ➔ Cost: $0.000000 / call  │                                     │ ➔ Cost: $0.000125 / call  │
+                 │ ➔ Cost: $0.000000 / call │                                     │ ➔ Cost: $0.000125 / call │
                  └───────────────────────────┘                                     └───────────────────────────┘
                                                                 │
                                                                 ▼
@@ -200,7 +202,7 @@ To maximize cost-effectiveness while preserving state-of-the-art multimodal visi
                                                  │ • Grounded guard explanations       │
                                                  │ • Conversational RAG over images    │
                                                  │ • Context-aware chat with citations │
-                                                 │ ➔ Cost: $0.000000 / call            │
+                                                 │ ➔ Cost: $0.000000 / call           │
                                                  └─────────────────────────────────────┘
 ```
 
@@ -1037,9 +1039,9 @@ data: {"token": "", "done": true, "citations": [{"index": 1, "subject": "red fox
 The application serves a clean, responsive dashboard directly from `/public`:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
 │  IMAGE UNDERSTANDING ENGINE | Dashboard   Download   Jobs   Images   Posts   Ranking   Chat   │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 1. **Dashboard (`/dashboard.html`)**:
