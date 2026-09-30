@@ -21,40 +21,43 @@ export interface ChatMessage {
 
 @injectable()
 export class RagRepository {
-    private readonly model: Promise<PreTrainedModel>;
-    private readonly tokenizer: Promise<PreTrainedTokenizer>;
-    private readonly isLoaded: Promise<void>;
+    private _model: PreTrainedModel | null = null;
+    private _tokenizer: PreTrainedTokenizer | null = null;
+    private _loadPromise: Promise<void> | null = null;
 
-    constructor() {
-        this.isLoaded = this.initializeModel();
-        /**
-         * device: 'cpu' → no GPU, uses main RAM
-         * device: 'dml' → uses DML (better than CPU, but not full CUDA)
-         * device: 'cuda' → full GPU (if supported)
-         * Transformers.js backend, Windows exposes dml and cpu, not cuda.
-         * The cuda device path is currently associated with the native Node backend on Linux x64.
-         * Windows uses DirectML for the supported native acceleration path
-         * 
-         * dtype: 'fp16' → half precision (fast, saves memory)
-         * dtype: 'fp32' → full precision (accurate, uses more memory)
-         */
-        this.model = AutoModelForCausalLM.from_pretrained(MODEL_ID, { device: 'cpu', dtype: 'fp16' });
-        this.tokenizer = AutoTokenizer.from_pretrained(MODEL_ID);
-    }
-
+    /**
+     * Lazy-loads the model and tokenizer on first use.
+     * Loading is deferred to avoid RAM contention at server startup.
+     *
+     * device: 'cpu' → no GPU, uses main RAM
+     * device: 'dml' → uses DML (better than CPU, but not full CUDA)
+     * device: 'cuda' → full GPU (if supported)
+     * Transformers.js backend, Windows exposes dml and cpu, not cuda.
+     * The cuda device path is currently associated with the native Node backend on Linux x64.
+     * Windows uses DirectML for the supported native acceleration path
+     *
+     * dtype: 'fp32' → full precision (accurate, uses more memory)
+     * dtype: 'fp16' → half precision (fast, saves memory)
+     * dtype: 'q8'  → 8-bit quantized (good accuracy, ~2x less RAM than fp32)
+     * dtype: 'q4'  → 4-bit quantized (lower accuracy, ~4–8x less RAM — best for CPU)
+     */
     private async initializeModel(): Promise<void> {
-        await this.model;
-        await this.tokenizer;
+        this._model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, { device: 'cpu', dtype: 'q4' });
+        this._tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
     }
 
     async waitUntilReady(): Promise<void> {
-        await this.isLoaded;
+        // Lazy-init: only load the model when first needed
+        if (!this._loadPromise) {
+            this._loadPromise = this.initializeModel();
+        }
+        await this._loadPromise;
     }
 
     async generate(prompt: string): Promise<GenerationResult> {
         await this.waitUntilReady();
-        const tokenizer = await this.tokenizer;
-        const model = await this.model;
+        const tokenizer = this._tokenizer!;
+        const model = this._model!;
 
         const inputs = await tokenizer(prompt, { return_tensors: 'pt', truncation: true, max_length: 4096 });
         const inputTokens = inputs.input_ids.dims?.[1] ?? inputs.input_ids.shape?.[1] ?? inputs.input_ids.size;
@@ -80,8 +83,8 @@ export class RagRepository {
 
     async generateChat(messages: ChatMessage[]): Promise<GenerationResult> {
         await this.waitUntilReady();
-        const tokenizer = await this.tokenizer;
-        const model = await this.model;
+        const tokenizer = this._tokenizer!;
+        const model = this._model!;
 
         const prompt = tokenizer.apply_chat_template?.(messages, { tokenize: false, add_generation_prompt: true })
             ?? messages.map(m => `${m.role}: ${m.content}`).join('\n') + '\nassistant:';

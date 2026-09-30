@@ -119,7 +119,7 @@ export class JobQueueService {
             const statusesToCheck = status ? [status] : ["waiting", "active", "completed", "failed", "delayed"];
             
             for (const s of statusesToCheck) {
-                const jobs = await targetQueue.getJobs([s], 0, limit - 1);
+                const jobs = await targetQueue.getJobs([s as any], 0, limit - 1);
                 for (const job of jobs) {
                     const state = await job.getState();
                     if (status && state !== status) continue;

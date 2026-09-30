@@ -14,6 +14,7 @@
 [![TSyringe](https://img.shields.io/badge/TSyringe-IoC%20%2F%20DI-brightgreen.svg)](https://github.com/microsoft/tsyringe)
 [![Gemini Vision](https://img.shields.io/badge/Google%20GenAI-Gemini%203.1%20Flash%20Lite-4285F4.svg?logo=google)](https://ai.google.dev/)
 [![Qwen RAG](https://img.shields.io/badge/HuggingFace-Qwen2.5--1.5B--Instruct-yellow.svg?logo=huggingface)](https://huggingface.co/onnx-community/Qwen2.5-1.5B-Instruct)
+[![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-9C59D1.svg?logo=modelcontextprotocol)](https://modelcontextprotocol.io/)
 
 ---
 
@@ -44,6 +45,7 @@
 - [Interactive Frontend Observability Suite](#interactive-frontend-observability-suite)
 - [Install & Quick Start](#install--quick-start)
 - [Environment Configuration](#environment-configuration)
+- [MCP Server (Model Context Protocol)](#mcp-server-model-context-protocol)
 - [Frequently Asked Questions (FAQ) for AI Crawlers & Developers](#frequently-asked-questions-faq-for-ai-crawlers--developers)
 - [References](#references)
 
@@ -1116,6 +1118,59 @@ npm run dev
 ```
 
 The database schema and indexes are initialized automatically on boot.
+
+## MCP Server (Model Context Protocol)
+
+The system exposes all core capabilities via the **Model Context Protocol (MCP)**, enabling LLM tool-calling, AI agent integration, and programmatic access from clients like Claude Desktop, Cursor, or custom agents.
+
+### Running the MCP Server
+
+The MCP server shares the **same DI container, services, and database connections** as the main Express app — no duplicate state.
+
+#### Stdio Transport (for Claude Desktop, Cursor, VS Code)
+```bash
+# Terminal 1: Start main API server
+npm run dev
+
+# Terminal 2: Start MCP server (stdio)
+npm run mcp:stdio
+```
+Configure your MCP client to launch `npx tsx infra/mcp/server.ts` with `MCP_TRANSPORT=stdio`.
+
+#### HTTP Transport (for remote/networked clients)
+```bash
+# Terminal 1: Start main API server
+npm run dev
+
+# Terminal 2: Start MCP HTTP server on port 3001
+npm run mcp:http
+```
+Connect to `http://localhost:3001/mcp` from HTTP-capable clients.
+
+### Testing with MCP Inspector
+```bash
+npx @modelcontextprotocol/inspector "npx tsx infra/mcp/server.ts"
+```
+Opens an interactive browser UI at `http://localhost:5173` to browse tools, call them, and inspect responses.
+
+### Available MCP Tools (7 categories, 25+ tools)
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| **Ingestion** | `enqueue_image_ingestion`, `enqueue_post_ingestion` | Batch enqueue images/posts for async processing |
+| **Matching** | `evaluate_post_matches`, `find_similar_images` | Semantic image-to-post matching with guardrails |
+| **RAG** | `chat_with_context`, `explain_match_decision` | Conversational RAG + grounded guard explanations |
+| **Cost** | `get_cost_summary`, `get_cost_by_type`, `get_cost_by_ref` | Token-based cost observability |
+| **Images** | `list_images`, `get_image_details`, `search_pexels` | Image listing, details, stock search |
+| **Posts** | `list_posts`, `get_post_details`, `summarize_post` | Post listing, details, local summarization |
+| **Jobs** | `get_queue_stats`, `get_job_details`, `retry_failed_jobs` | BullMQ queue monitoring & management |
+
+All tools use **Zod-validated inputs** and return structured JSON. Errors follow MCP error format with codes.
+
+### Implementation Notes
+- The MCP server (`infra/mcp/server.ts`) uses a **separate TSyringe container** (`infra/mcp/container.ts`) that mirrors the main app's registrations
+- Tools are registered in `infra/mcp/tools/` — each category in its own file
+- Shared services = zero duplication, consistent behavior between HTTP API and MCP
 
 ---
 
